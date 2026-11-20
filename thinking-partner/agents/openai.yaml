@@ -1,0 +1,6 @@
+interface:
+  display_name: "Thinking Partner"
+  short_description: "Partenaire exigeant pour explorer et décider"
+  default_prompt: "Utilise $thinking-partner pour explorer cette idée avec moi, challenger mes hypothèses et m'aider à choisir la meilleure approche."
+policy:
+  allow_implicit_invocation: false

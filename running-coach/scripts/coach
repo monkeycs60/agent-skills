@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+venv="$(dirname "$here")/.venv/bin/python"
+if [ -z "${RUNNING_COACH_PYTHON:-}" ] && [ -x "$venv" ]; then exec "$venv" -I "$here/coach.py" "$@"; fi
+for candidate in "${RUNNING_COACH_PYTHON:-}" python3.14 python3.13 python3.12 python3.11 python3.10 python3; do
+  [ -n "$candidate" ] && command -v "$candidate" >/dev/null 2>&1 || continue
+  if "$candidate" -c 'import sys; sys.exit(sys.version_info < (3, 10))' 2>/dev/null; then
+    exec "$candidate" -I "$here/coach.py" "$@"
+  fi
+done
+echo "Python 3.10 ou plus récent introuvable : lancer install.sh du skill running-coach." >&2
+exit 1

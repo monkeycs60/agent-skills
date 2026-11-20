@@ -1,0 +1,625 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Inviter son équipe, film</title>
+<link rel="stylesheet" href="charte.css">
+<style>
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: #111114; overflow: hidden; }
+body { font-family: var(--font-body); -webkit-font-smoothing: antialiased; color: var(--ink); }
+
+#stage { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; overflow: hidden; background: var(--bg); transform-origin: 0 0; }
+.a { position: absolute; left: 0; top: 0; }
+.u { font-family: var(--font-title); }
+
+#dots { position: absolute; left: -200px; top: -200px; width: 2320px; height: 1480px;
+  background-image: radial-gradient(circle, var(--dots) 1.8px, transparent 2.4px); background-size: 40px 40px; opacity: .55; }
+.blob { position: absolute; border-radius: 50%; }
+
+#world { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
+.card { position: absolute; background: var(--surface); border-radius: var(--radius-card);
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--shadow) 4%, transparent), 0 24px 70px color-mix(in srgb, var(--shadow) 10%, transparent); }
+
+#shape { position: absolute; left: 0; top: 0; overflow: visible; border-style: solid; border-color: transparent; }
+#sheen { position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+  background: radial-gradient(120% 90% at 18% 10%, rgba(255,255,255,.28), rgba(255,255,255,0) 55%),
+              radial-gradient(80% 70% at 90% 100%, color-mix(in srgb, var(--brand-deep) 35%, transparent), color-mix(in srgb, var(--brand-deep) 0%, transparent) 60%); }
+.cl { position: absolute; left: 50%; top: 50%; transform: translate(-50%,-50%); display: flex; align-items: center; white-space: nowrap; }
+
+.row { position: absolute; left: 24px; width: 552px; height: 64px; border-radius: 16px; display: flex; align-items: center; gap: 22px; padding-left: 24px; font-size: 30px; font-weight: 500; }
+.row svg, .ico { width: 30px; height: 30px; flex: 0 0 auto; }
+.sect { position: absolute; left: 48px; font-size: 19px; font-weight: 700; letter-spacing: .12em; color: #8E8E93; text-transform: uppercase; }
+
+.lbl { position: absolute; font-size: 28px; font-weight: 500; color: var(--ink); }
+.field { position: absolute; background: var(--surface); border: 2px solid var(--line); border-radius: var(--radius-field); display: flex; align-items: center; }
+
+.cap { position: absolute; left: 120px; top: 70px; display: flex; gap: 26px; align-items: flex-start; }
+.badge { width: 66px; height: 66px; border-radius: 50%; background: var(--brand); color: #fff; display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-title); font-weight: 900; font-size: 32px; flex: 0 0 auto; margin-top: 2px; box-shadow: 0 10px 24px color-mix(in srgb, var(--brand) 28%, transparent); }
+.ttl { font-family: var(--font-title); font-weight: 900; font-size: 60px; letter-spacing: -0.035em; line-height: 1.05; white-space: nowrap; }
+.sub { font-size: 30px; font-weight: 500; color: var(--txt2); margin-top: 10px; white-space: nowrap; position: relative; height: 40px; }
+.sub > div { position: absolute; left: 0; top: 0; }
+.w { display: inline-block; overflow: hidden; vertical-align: top; padding-bottom: .08em; margin-bottom: -.08em; }
+.w > span { display: inline-block; }
+
+#prog { position: absolute; left: 810px; top: 1034px; width: 300px; height: 8px; display: flex; gap: 10px; }
+#prog > div { flex: 1; border-radius: 4px; background: var(--track); overflow: hidden; }
+#prog > div > i { display: block; height: 100%; width: 100%; background: var(--brand); transform-origin: 0 50%; transform: scaleX(0); }
+
+.hline { position: absolute; left: 170px; height: 150px; overflow: hidden; }
+.hline > div { font-family: var(--font-title); font-weight: 900; font-size: 124px; letter-spacing: -0.045em; line-height: 150px; color: #fff; white-space: nowrap; }
+
+#player { position: fixed; left: 0; right: 0; bottom: 0; height: 56px; display: flex; align-items: center; gap: 14px; padding: 0 18px;
+  background: #18181c; color: #d7d7de; font: 500 14px var(--font-body); }
+#player button { background: var(--brand); color: #fff; border: 0; border-radius: 20px; padding: 8px 16px; font: 700 14px var(--font-body); cursor: pointer; }
+#player input { flex: 1; accent-color: var(--brand); }
+#tc { width: 110px; text-align: right; font-variant-numeric: tabular-nums; }
+body.render #player { display: none; }
+</style>
+</head>
+<body>
+<div id="stage">
+  <div id="bg" class="a" style="width:1920px;height:1080px">
+    <div class="blob" id="b1" style="width:1100px;height:1100px;background:radial-gradient(circle,var(--halo-1) 0%,transparent 62%)"></div>
+    <div class="blob" id="b2" style="width:1000px;height:1000px;background:radial-gradient(circle,var(--halo-2) 0%,transparent 60%)"></div>
+    <div class="blob" id="b3" style="width:900px;height:900px;background:radial-gradient(circle,var(--halo-3) 0%,transparent 60%)"></div>
+    <div id="dots"></div>
+  </div>
+
+  <div id="world">
+    <div class="card" id="progCard" style="left:510px;top:455px;width:900px;height:240px">
+      <div class="a u" style="left:48px;top:56px;width:128px;height:128px;border-radius:32px;background:linear-gradient(135deg,#D9E6FD,#FDE3B5);display:flex;align-items:center;justify-content:center;font-weight:900;font-size:44px;letter-spacing:-.03em" data-k="space_initials"></div>
+      <div class="a u" style="left:212px;top:60px;font-weight:800;font-size:56px;letter-spacing:-.03em" data-k="space_name"></div>
+      <div class="a" id="progSub" style="left:214px;top:134px;font-size:29px;font-weight:500;color:var(--muted)" data-k="space_kind"></div>
+      <div class="a" id="progTag" style="left:0;top:-64px;height:46px;padding:0 20px 0 14px;border-radius:23px;background:#fff;display:flex;align-items:center;gap:10px;font-size:22px;font-weight:700;color:var(--brand);box-shadow:0 6px 18px color-mix(in srgb, var(--shadow) 8%, transparent)">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6"/><circle cx="16.5" cy="8" r="2.5"/><path d="M16 13.2c2.3 0 4 1.3 4.5 3.8"/></svg>
+        <span data-k="spaces"></span>
+      </div>
+    </div>
+
+    <div class="card" id="side" style="left:1060px;top:250px;width:600px;height:726px;border-radius:30px">
+      <img class="a" data-logo="clair" style="left:44px;top:42px;height:44px" alt="">
+      <div class="sect" style="top:118px" data-k="general"></div>
+      <div class="row" style="top:140px" data-i="0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="6.5" height="6.5" rx="1.2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.2"/></svg><span data-k="today"></span></div>
+      <div class="row" style="top:212px" data-i="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg><span data-k="inbox"></span><span style="margin-left:auto;margin-right:26px;min-width:40px;height:34px;border-radius:17px;background:var(--tint-2);color:var(--brand);font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">1</span></div>
+      <div class="row" style="top:284px" data-i="2"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="4" y="5.5" width="16" height="14" rx="2"/><path d="M4 10h16M8.5 3.5v4M15.5 3.5v4"/></svg><span data-k="calendar"></span></div>
+      <div class="row" style="top:356px" data-i="3"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M9 7h11M9 12h11M9 17h11M4.5 7h.5M4.5 12h.5M4.5 17h.5"/></svg><span data-k="projects"></span></div>
+      <div class="sect" style="top:450px" data-k="tools"></div>
+      <div class="row" style="top:480px" data-i="4"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8.5 16v-4M12 16V8.5M15.5 16v-6"/></svg><span data-k="reports"></span></div>
+      <div class="row" style="top:552px" data-i="5" id="rowLink"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 7.5H7.5a4.5 4.5 0 0 0 0 9H10M14 7.5h2.5a4.5 4.5 0 0 1 0 9H14M8.5 12h7"/></svg><span data-k="invite"></span></div>
+      <div class="row" style="top:624px" data-i="6"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6"/><circle cx="16.5" cy="8" r="2.5"/><path d="M16 13.2c2.3 0 4 1.3 4.5 3.8"/></svg><span data-k="spaces"></span></div>
+    </div>
+
+    <div class="card" id="form" style="left:300px;top:250px;width:1320px;height:680px">
+      <div class="a u" id="fTitle" style="left:60px;top:40px;font-weight:700;font-size:44px;letter-spacing:-.02em" data-k="settings"></div>
+      <div class="lbl" id="fUrlLbl" style="left:60px;top:126px" data-k="list_url"></div>
+      <div class="field" id="inputS" style="left:60px;top:170px;width:1200px;height:90px;padding:0 28px;font-size:32px;font-weight:500">
+        <span data-k="list_url_value"></span>
+        <svg class="ico" style="margin-left:auto;color:var(--muted)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </div>
+      <div class="a" id="keys" style="left:1044px;top:34px;display:flex;gap:12px">
+        <div class="kc" style="height:76px;padding:0 24px;border-radius:16px;background:#fff;border:2px solid var(--line);border-bottom-width:6px;display:flex;align-items:center;font-weight:700;font-size:30px;color:var(--ink)">Ctrl</div>
+        <div class="kc" style="height:76px;width:76px;border-radius:16px;background:#fff;border:2px solid var(--line);border-bottom-width:6px;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:30px;color:var(--ink)">V</div>
+      </div>
+      <div class="a" id="looking" style="left:60px;top:292px;display:flex;align-items:center;gap:16px;font-size:26px;font-weight:500;color:var(--muted)">
+        <svg id="spin" width="28" height="28" viewBox="0 0 28 28"><circle cx="14" cy="14" r="11" fill="none" style="stroke:var(--tint)" stroke-width="3.5"/><path d="M14 3a11 11 0 0 1 11 11" fill="none" style="stroke:var(--brand)" stroke-width="3.5" stroke-linecap="round"/></svg>
+        <span data-k="looking"></span>
+      </div>
+      <div class="lbl" id="fPartLbl" style="left:60px;top:306px" data-k="space"></div>
+      <div class="field" id="sel" style="left:60px;top:350px;width:420px;height:88px;padding:0 24px;font-size:30px;font-weight:500">
+        <span data-k="space_name"></span>
+        <svg class="ico" style="margin-left:auto;width:26px;height:26px" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+      </div>
+      <div class="a" id="auto" style="left:506px;top:372px;height:46px;padding:0 20px 0 14px;border-radius:23px;background:var(--success-bg);color:var(--success-ink);display:flex;align-items:center;gap:10px;font-size:22px;font-weight:700">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" style="stroke:var(--success)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+        <span data-k="auto"></span>
+      </div>
+      <div class="lbl" id="fLinkLbl" style="left:60px;top:478px" data-k="invite_link"></div>
+    </div>
+
+    <div class="a" id="phone" style="left:1060px;top:176px;width:420px;height:830px;border-radius:58px;background:#16161A;box-shadow:0 4px 10px color-mix(in srgb, var(--shadow) 10%, transparent),0 40px 90px color-mix(in srgb, var(--shadow) 28%, transparent)">
+      <div class="a" style="left:12px;top:12px;width:396px;height:806px;border-radius:47px;overflow:hidden;background:#ECEFF3">
+        <div class="a" style="left:0;top:0;width:396px;height:108px;background:#FFFFFF;border-bottom:1px solid #DDE2E8">
+          <svg class="a" style="left:18px;top:52px" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3A3F47" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-7 7 7 7"/></svg>
+          <div class="a" style="left:50px;top:40px;width:48px;height:48px;border-radius:50%;background:linear-gradient(135deg,#FDE3B5,#F6C9B6)"></div>
+          <div class="a" style="left:110px;top:42px;font-size:22px;font-weight:700;color:#1F2329" data-k="chat_name"></div>
+          <div class="a" style="left:110px;top:70px;font-size:17px;font-weight:500;color:#7A828E" data-k="chat_status"></div>
+        </div>
+        <div class="a" style="left:0;top:126px;width:396px;display:flex;justify-content:center"><span style="padding:4px 14px;border-radius:12px;background:rgba(31,35,41,.07);font-size:16px;font-weight:600;color:#6B7380" data-k="chat_day"></span></div>
+        <div class="a" style="left:16px;top:172px;max-width:310px;padding:12px 18px 14px;border-radius:6px 22px 22px 22px;background:#FFFFFF;box-shadow:0 1px 2px rgba(0,0,0,.06)">
+          <div style="font-size:16px;font-weight:700;color:#C2410C" data-k="chat_from"></div>
+          <div style="font-size:21px;font-weight:500;color:#1F2329;margin-top:2px" data-k="chat_m1"></div>
+        </div>
+        <div class="a" style="left:16px;top:282px;width:364px;height:364px;border-radius:22px 6px 22px 22px;background:#DCF1E6;box-shadow:0 1px 2px rgba(0,0,0,.06)">
+          <div class="a" style="left:20px;top:14px;font-size:21px;font-weight:500;color:#1F2329" data-k="chat_m2"></div>
+          <div class="a" style="left:12px;top:54px;width:340px;height:214px;border-radius:16px;background:#FFFFFF;overflow:hidden">
+            <svg id="objet" class="a" style="left:0;top:0" width="340" height="124" viewBox="0 0 340 124">
+              <rect width="340" height="124" style="fill:var(--tint-2)"/>
+              <g transform="translate(92 20)">
+                <circle cx="13" cy="13" r="12" style="fill:var(--brand)"/><path d="M7.5 13.3l3.7 3.7 7.3-7.6" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <rect x="36" y="8" width="118" height="10" rx="5" style="fill:var(--brand-light)"/>
+                <circle cx="13" cy="44" r="12" style="fill:var(--brand)"/><path d="M7.5 44.3l3.7 3.7 7.3-7.6" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+                <rect x="36" y="39" width="88" height="10" rx="5" style="fill:var(--brand-light)"/>
+                <circle cx="13" cy="75" r="11" fill="#fff" style="stroke:var(--brand-light)" stroke-width="2.4"/>
+                <rect x="36" y="70" width="104" height="10" rx="5" style="fill:var(--track)"/>
+              </g>
+              <path d="M272 22 l4 10 10 4 -10 4 -4 10 -4 -10 -10 -4 10 -4 z" style="fill:var(--accent)"/>
+              <path d="M60 78 l3 7 7 3 -7 3 -3 7 -3 -7 -7 -3 7 -3 z" style="fill:var(--accent)"/>
+            </svg>
+            <div class="a u" style="left:18px;top:138px;font-size:22px;font-weight:800;letter-spacing:-.01em;color:#1F2329" data-k="chat_card_title"></div>
+            <div class="a" style="left:18px;top:172px;font-size:17px;font-weight:500;color:#6B7380" data-k="chat_card_sub"></div>
+          </div>
+        </div>
+        <div class="a" style="left:16px;top:736px;width:292px;height:52px;border-radius:26px;background:#FFFFFF;border:1.5px solid #D5DAE1;display:flex;align-items:center;padding-left:20px;font-size:19px;font-weight:500;color:#8A919C" data-k="chat_input"></div>
+        <div class="a" style="left:320px;top:736px;width:52px;height:52px;border-radius:50%;background:#2E3238;display:flex;align-items:center;justify-content:center">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"><path d="M21 3L10 14M21 3l-7 18-4-7-7-4z"/></svg>
+        </div>
+      </div>
+    </div>
+    <svg id="subLine" class="a" style="left:0;top:0;overflow:visible" width="10" height="10"><path d="M948 782 C1010 782 1030 785 1093 785" fill="none" style="stroke:var(--brand)" stroke-width="3" stroke-dasharray="190" stroke-linecap="round"/></svg>
+    <div class="a" id="subid" style="left:660px;top:756px;height:52px;padding:0 20px 0 16px;border-radius:26px;background:var(--tint);color:var(--brand);display:flex;align-items:center;gap:10px;font-size:24px;font-weight:700;box-shadow:0 10px 24px color-mix(in srgb, var(--brand) 18%, transparent);transform-origin:100% 50%">
+      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M10 7.5H7.5a4.5 4.5 0 0 0 0 9H10M14 7.5h2.5a4.5 4.5 0 0 1 0 9H14M8.5 12h7"/></svg>
+      <span data-k="subid"></span>
+    </div>
+    <div class="a" id="sale" style="left:660px;top:846px;height:60px;padding:0 24px 0 18px;border-radius:30px;background:#fff;color:var(--success-ink);display:flex;align-items:center;gap:12px;font-size:24px;font-weight:700;box-shadow:0 14px 36px color-mix(in srgb, var(--shadow) 14%, transparent);transform-origin:0 50%">
+      <span style="width:30px;height:30px;border-radius:50%;background:var(--success-bg);display:flex;align-items:center;justify-content:center"><span style="width:12px;height:12px;border-radius:50%;background:var(--success)"></span></span>
+      <span data-k="sale"></span>
+    </div>
+    <svg id="burst" class="a" width="400" height="400" viewBox="-200 -200 400 400" style="left:1070px;top:585px;overflow:visible"></svg>
+
+    <div class="a" id="real" style="left:400px;top:262px;width:1120px;height:744px;border-radius:20px;background:#fff;overflow:hidden;box-shadow:0 4px 10px color-mix(in srgb, var(--shadow) 6%, transparent),0 40px 100px color-mix(in srgb, var(--shadow) 20%, transparent)">
+      <div class="a" style="left:0;top:0;width:1120px;height:44px;background:#FBFBFE;border-bottom:1px solid #EDECF3">
+        <span class="a" style="left:22px;top:16px;width:12px;height:12px;border-radius:50%;background:#FF5F57"></span>
+        <span class="a" style="left:42px;top:16px;width:12px;height:12px;border-radius:50%;background:#FEBC2E"></span>
+        <span class="a" style="left:62px;top:16px;width:12px;height:12px;border-radius:50%;background:#28C840"></span>
+      </div>
+      <img class="a" id="realImg" style="left:0;top:44px;width:1120px;height:700px" alt="">
+    </div>
+    <div class="a" id="ring2" style="left:410px;top:600px;width:156px;height:38px;border-radius:12px;border:4px solid var(--brand)"></div>
+
+    <div id="shape">
+      <div id="sheen"></div>
+      <div class="cl u" id="cApply" style="left:0;top:0;transform:none;width:234px;height:68px;justify-content:center;font-size:30px;font-weight:800;color:#fff;letter-spacing:-.01em"><span data-k="join"></span></div>
+      <div class="cl" id="cPend" style="left:0;top:0;transform:none;width:234px;height:68px;justify-content:center;gap:14px;font-size:30px;font-weight:700;color:var(--warning-ink)"><span style="width:16px;height:16px;border-radius:50%;background:var(--warning)"></span><span data-k="pending"></span></div>
+      <div class="cl" id="cChip" style="gap:14px;font-size:30px;font-weight:700;color:var(--success-ink)"><span style="width:16px;height:16px;border-radius:50%;background:var(--success)"></span><span data-k="member"></span></div>
+      <div class="cl" id="cMenu" style="width:552px;left:0;top:0;transform:none;height:64px;padding-left:24px;gap:22px;font-size:30px;font-weight:500">
+        <svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 7.5H7.5a4.5 4.5 0 0 0 0 9H10M14 7.5h2.5a4.5 4.5 0 0 1 0 9H14M8.5 12h7"/></svg><span data-k="invite"></span>
+      </div>
+      <div class="cl" id="cInput" style="width:1200px;left:0;top:0;transform:none;height:90px;padding:0 28px;font-size:32px;font-weight:500">
+        <span id="urlTxt" data-k="list_url_value"></span><span id="caret1" style="width:3px;height:40px;background:var(--brand);margin-left:3px;border-radius:2px"></span>
+        <svg id="clearX" class="ico" style="margin-left:auto;color:var(--muted)" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </div>
+      <div class="cl" id="cGen" style="width:1200px;left:0;top:0;transform:none;height:106px;padding:0 44px;font-size:26px;font-weight:600;color:var(--brand-light);gap:14px;overflow:hidden;border-radius:20px">
+        <div id="shimmer" class="a" style="top:0;height:106px;width:420px;background:linear-gradient(90deg,rgba(255,255,255,0),rgba(255,255,255,.65),rgba(255,255,255,0))"></div>
+        <span data-k="generating" style="position:relative"></span>
+      </div>
+      <div class="cl" id="cLink" style="width:1200px;left:0;top:0;transform:none;height:106px;padding:0 44px;font-weight:700;color:var(--brand)">
+        <div id="linkBox" style="position:relative;display:flex;align-items:center">
+          <div id="hl" class="a" style="border-radius:10px;background:#fff;box-shadow:0 4px 14px color-mix(in srgb, var(--brand) 16%, transparent)"></div>
+          <span id="lPre" style="position:relative"></span><span id="lMid" style="position:relative"></span><span id="lPost" style="position:relative"></span><span id="caret2" style="position:relative;width:3px;height:36px;background:var(--brand);margin-left:2px;border-radius:2px"></span>
+          <div id="call" class="a" style="display:flex;flex-direction:column;align-items:center">
+            <svg width="4" height="44" style="overflow:visible"><path id="callLine" d="M2 0V44" style="stroke:var(--brand)" stroke-width="3" stroke-linecap="round" stroke-dasharray="44" /></svg>
+            <div id="callTxt" style="margin-top:8px;padding:10px 20px;border-radius:24px;background:var(--brand);color:#fff;font-size:24px;font-weight:700;white-space:nowrap" data-k="code_note"></div>
+          </div>
+        </div>
+        <div id="copyIco" class="a" style="left:1136px;top:38px;width:30px;height:30px">
+          <svg id="icCopy" class="a" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2"/><path d="M5 15.5V5.5a1.5 1.5 0 0 1 1.5-1.5h9.5"/></svg>
+          <svg id="icCheck" class="a" width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4.5 12.5l5 5L19.5 7"/></svg>
+        </div>
+      </div>
+      <div class="cl" id="cBtn" style="gap:10px;font-size:23px;font-weight:800;color:var(--brand);letter-spacing:.03em">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" style="stroke:var(--brand)" stroke-width="2.4" stroke-linecap="round"><path d="M10 7.5H7.5a4.5 4.5 0 0 0 0 9H10M14 7.5h2.5a4.5 4.5 0 0 1 0 9H14M8.5 12h7"/></svg>
+        <span data-k="sticker"></span>
+      </div>
+    </div>
+
+    <div class="a" id="touch" style="left:1238px;top:753px;width:64px;height:64px;border-radius:50%;background:color-mix(in srgb, var(--ink) 20%, transparent);border:3px solid rgba(255,255,255,.95);box-shadow:0 6px 18px color-mix(in srgb, var(--shadow) 25%, transparent)"></div>
+    <div class="a" id="ripple" style="width:10px;height:10px;border-radius:50%;background:color-mix(in srgb, var(--brand) 28%, transparent)"></div>
+    <svg id="cursor" class="a" width="40" height="48" viewBox="0 0 40 48" style="overflow:visible;filter:drop-shadow(0 6px 10px color-mix(in srgb, var(--shadow) 28%, transparent))">
+      <path d="M3 2 L3 38 L12.5 29.5 L18.5 43 L25 40 L19 26.8 L31.5 26.8 Z" style="fill:var(--ink)" stroke="#fff" stroke-width="2.6" stroke-linejoin="round"/>
+    </svg>
+  </div>
+
+  <div id="hud" class="a" style="width:1920px;height:1080px">
+    <div id="hook" class="a" style="width:1920px;height:1080px">
+      <div class="a" id="over" style="left:174px;top:262px;font-size:24px;font-weight:700;letter-spacing:.22em;color:var(--on-brand-soft);text-transform:uppercase" data-k="overline"></div>
+      <div class="hline" style="top:300px"><div data-k="h1"></div></div>
+      <div class="hline" style="top:445px"><div data-k="h2"></div></div>
+      <div class="hline" style="top:590px"><div><span data-k="h3a"></span> <span id="hMark" style="position:relative;display:inline-block"><span id="hMarkBg" class="a" style="left:-14px;right:-14px;top:22px;bottom:12px;background:var(--accent);border-radius:18px;transform-origin:0 50%"></span><span id="hWord" style="position:relative" data-k="h3b"></span></span></div></div>
+      <svg id="glyph" class="a" style="left:1360px;top:360px;overflow:visible" width="360" height="360" viewBox="0 0 200 200">
+        <g transform="rotate(-45 100 100)" fill="none" stroke="#fff" stroke-width="15" stroke-linecap="round">
+          <rect id="gA" x="18" y="72" width="98" height="56" rx="28" pathLength="1" stroke-dasharray="1 1"/>
+          <rect id="gB" x="84" y="72" width="98" height="56" rx="28" pathLength="1" stroke-dasharray="1 1"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="cap" id="cap1"><div class="badge">1</div><div><div class="ttl" data-k="c1"></div><div class="sub"><div data-k="c1a"></div><div data-k="c1b"></div></div></div></div>
+    <div class="cap" id="cap2"><div class="badge">2</div><div><div class="ttl" data-k="c2"></div><div class="sub"><div data-k="c2a"></div></div></div></div>
+    <div class="cap" id="cap3"><div class="badge">3</div><div><div class="ttl" data-k="c3"></div><div class="sub"><div data-k="c3a"></div><div data-k="c3b"></div></div></div></div>
+    <div class="cap" id="cap4"><div class="badge">4</div><div><div class="ttl" data-k="c4"></div><div class="sub"><div data-k="c4a"></div><div data-k="c4b"></div></div></div></div>
+    <div class="cap" id="cap5"><div class="badge">5</div><div><div class="ttl" data-k="c5"></div><div class="sub"><div data-k="c5a"></div></div></div></div>
+    <div class="cap" id="cap6"><div class="badge"><svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></div><div><div class="ttl" data-k="c6"></div><div class="sub"><div data-k="c6a"></div></div></div></div>
+
+    <div id="prog"><div><i></i></div><div><i></i></div><div><i></i></div><div><i></i></div><div><i></i></div></div>
+
+    <div id="outro" class="a" style="width:1920px;height:1080px">
+      <img id="oLogo" class="a" data-logo="fonce" style="left:0;top:0;height:74px" alt="">
+      <div id="oTitle" class="a u" style="top:470px;width:1920px;text-align:center;font-weight:900;font-size:92px;letter-spacing:-.04em;color:#fff" data-k="o_title"></div>
+      <div id="oPill" class="a" style="top:612px;height:68px;padding:0 32px;border-radius:34px;background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.3);color:#fff;display:flex;align-items:center;gap:14px;font-size:28px;font-weight:600">
+        <span data-k="o_pill"></span>
+        <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="player"><button id="pp">Pause</button><input id="scrub" type="range" min="0" step="0.0001" value="0"><span id="tc">0.00 s</span></div>
+
+<script src="moteur.js"></script>
+<script>
+const TXT = {
+  fr: {
+    general: 'Général', tools: 'Outils', today: 'Aujourd’hui', inbox: 'Boîte de réception', calendar: 'Calendrier',
+    projects: 'Projets', reports: 'Rapports', invite: 'Inviter', spaces: 'Espaces',
+    settings: 'Paramètres généraux', list_url: 'Adresse de la liste', space: 'Espace', invite_link: 'Lien d’invitation',
+    list_url_value: 'https://coche.example/listes/lancement',
+    looking: 'Recherche de la liste correspondante...', generating: 'Génération du lien...',
+    member: 'Membre', auto: 'Reconnu automatiquement', code_note: 'Code d’invitation',
+    join: 'Rejoindre', pending: 'En attente', space_initials: 'EP', space_name: 'Équipe Produit', space_kind: 'Espace d’équipe',
+    chat_name: 'Équipe Produit', chat_status: '3 membres', chat_day: 'Aujourd’hui', chat_from: 'Léa',
+    chat_m1: 'Qui a la liste du lancement\u202F?', chat_m2: 'Voici le lien\u00A0:', chat_card_title: 'Lancement',
+    chat_card_sub: '12 tâches · Équipe Produit', chat_input: 'Écrire un message',
+    sticker: 'COCHE.EXAMPLE', subid: 'Votre lien d’invitation', sale: '+1 membre dans la liste',
+    overline: 'Doc express · Listes partagées', h1: 'Une liste.', h2: 'Un lien.', h3a: 'Toute', h3b: 'l’équipe.',
+    c1: 'Rejoignez un espace', c1a: 'Demandez l’accès depuis Espaces.', c1b: 'Une fois acceptée, vous êtes «\u00A0Membre\u00A0».',
+    c2: 'Ouvrez «\u00A0Inviter\u00A0»', c2a: 'Dans le menu, rubrique Outils.',
+    c3: 'Collez l’adresse de la liste', c3a: 'Copiée depuis la barre d’adresse.', c3b: 'L’espace est reconnu tout seul.',
+    c4: 'Votre lien est prêt', c4a: 'Il s’affiche, sans aucun bouton.', c4b: 'Copiez-le en un clic.',
+    c5: 'Envoyez-le à votre équipe', c5a: 'Un clic suffit pour rejoindre la liste.',
+    c6: 'Et voici le vrai écran', c6a: 'Outils › Inviter, dans votre espace.',
+    o_title: 'Invitez toute votre équipe', o_pill: 'La doc complète sur coche.example',
+    link: ['https://coche.example/rejoindre/lancement?code=', 'K7Q2', '']
+  },
+  en: {
+    general: 'General', tools: 'Tools', today: 'Today', inbox: 'Inbox', calendar: 'Calendar',
+    projects: 'Projects', reports: 'Reports', invite: 'Invite', spaces: 'Spaces',
+    settings: 'General settings', list_url: 'List address', space: 'Space', invite_link: 'Invite link',
+    list_url_value: 'https://coche.example/listes/lancement',
+    looking: 'Looking for the matching list...', generating: 'Generating the link...',
+    member: 'Member', auto: 'Recognized automatically', code_note: 'Invite code',
+    join: 'Join', pending: 'Pending', space_initials: 'PT', space_name: 'Product Team', space_kind: 'Team space',
+    chat_name: 'Product Team', chat_status: '3 members', chat_day: 'Today', chat_from: 'Lea',
+    chat_m1: 'Who has the launch list?', chat_m2: 'Here is the link:', chat_card_title: 'Launch',
+    chat_card_sub: '12 tasks · Product Team', chat_input: 'Write a message',
+    sticker: 'COCHE.EXAMPLE', subid: 'Your invite link', sale: '+1 member on the list',
+    overline: 'Quick guide · Shared lists', h1: 'One list.', h2: 'One link.', h3a: 'The whole', h3b: 'team.',
+    c1: 'Join a space', c1a: 'Request access from Spaces.', c1b: 'Once accepted, you are a “Member”.',
+    c2: 'Open “Invite”', c2a: 'In the menu, under Tools.',
+    c3: 'Paste the list address', c3a: 'Copied from the address bar.', c3b: 'The space is recognized on its own.',
+    c4: 'Your link is ready', c4a: 'It shows up, no button needed.', c4b: 'Copy it in one click.',
+    c5: 'Send it to your team', c5a: 'One click is all it takes to join.',
+    c6: 'And here is the real screen', c6a: 'Tools › Invite, in your space.',
+    o_title: 'Invite your whole team', o_pill: 'Full docs at coche.example',
+    link: ['https://coche.example/rejoindre/lancement?code=', 'K7Q2', '']
+  }
+};
+logos();
+const LANG = new URLSearchParams(location.search).get('lang') || 'fr';
+const T = TXT[LANG];
+document.querySelectorAll('[data-k]').forEach(e => { e.textContent = T[e.dataset.k]; });
+$('realImg').src = `assets/ecran-reel-${LANG}.png`;
+const CAPTURE = fetch(`assets/ecran-reel-${LANG}.json`).then(r => r.json()).catch(() => null);
+
+const FPS = 60;
+const INS_A = 4.3, INS_D = 1.2;
+const HOLDS = [[2.0, 1.0], [3.6, .5], [5.45, .8], [8.75, .8], [10.95, .4], [12.75, .9],
+               [15.35, .9], [17.75, .5], [20.3, .5], [21.45, 1.0], [23.9, 1.2], [26.6, 1.0]];
+const PAUSE = HOLDS.reduce((a, h) => a + h[1], 0);
+const DURATION = +(26 + INS_D + PAUSE).toFixed(2);
+function hold(T) {
+  let acc = 0;
+  for (const [a, d] of HOLDS) { if (T < a + acc) return T - acc; if (T < a + acc + d) return a; acc += d; }
+  return T - acc;
+}
+const warp = (t) => t <= INS_A ? t : (t <= INS_A + INS_D ? INS_A : t - INS_D);
+
+const ST = {
+  FULL:  { x:0, y:0, w:1920, h:1080, r:0 },
+  CHIP:  { x:1132, y:541, w:234, h:68, r:34 },
+  MENU:  { x:1084, y:802, w:552, h:64, r:16 },
+  INPUT: { x:360, y:420, w:1200, h:90, r:14 },
+  LINK:  { x:360, y:770, w:1200, h:106, r:20 },
+  STICKER: { x:1100, y:752, w:340, h:66, r:16 },
+  RING:  { x:617, y:691, w:858, h:71, r:18 }
+};
+const GEO = [[2.45,'CHIP','def'],[5.55,'MENU','def'],[8.45,'INPUT','def'],[12.35,'LINK','def'],[17.45,'STICKER','def'],[21.75,'RING','def'],[23.55,'FULL','heavy']];
+const geo = (t, k) => tr(t, ST.FULL[k], GEO.map(g => [g[0], ST[g[1]][k], g[2]]));
+const VIO = couleur('--brand'), VIO0 = couleur('--brand', 0), GRN = couleur('--success-bg'), SUC = couleur('--success'), HOV = couleur('--tint-2'), LAV = couleur('--tint'),
+  WHT = [255,255,255,1], INK = couleur('--ink'), LINE = couleur('--line'), PEND = couleur('--warning-bg'), WARN = couleur('--warning');
+const BG_KEYS = [[2.62,GRN,'ui'],[5.58,HOV,'ui'],[6.9,LAV,'snap'],[8.45,WHT,'ui'],[12.35,LAV,'ui'],[17.45,WHT,'ui'],[21.75,VIO0,'ui'],[23.55,VIO,'def']];
+
+const CUR = [
+  { a:6.0, b:10.0, from:[1580,1050], mv:[[6.1,1378,848,'def'],[8.55,560,466,'ui'],[9.3,700,560,'def']], clicks:[6.9, 9.0] },
+  { a:15.0, b:16.7, from:[1330,1010], mv:[[15.1,1516,834,'def']], clicks:[15.85] }
+];
+const CLICKS = CUR.flatMap(c => c.clicks);
+
+let rowsSide, capWords = {}, hookLines, linkW = {}, capture = null;
+CAPTURE.then(c => { capture = c; });
+function init() {
+  rowsSide = [...document.querySelectorAll('#side .row')];
+  for (let i = 1; i <= 6; i++) capWords[i] = words(document.querySelector(`#cap${i} .ttl`));
+  hookLines = [...document.querySelectorAll('.hline > div')];
+  const box = $('linkBox');
+  $('lPre').textContent = T.link[0]; $('lMid').textContent = T.link[1]; $('lPost').textContent = T.link[2];
+  let fs = 30; box.style.fontSize = fs + 'px';
+  while (box.scrollWidth > 1200 - 88 - 60 && fs > 20) { fs -= 0.5; box.style.fontSize = fs + 'px'; }
+  linkW.fs = fs; linkW.midL = $('lMid').offsetLeft; linkW.midW = $('lMid').offsetWidth; linkW.h = box.offsetHeight;
+  const g = $('burst'); let h = '';
+  for (let i = 0; i < 10; i++) h += `<line data-a="${i * 36 + 8}" style="stroke:${i % 2 ? 'var(--accent)' : 'var(--brand)'}" stroke-width="7" stroke-linecap="round"/>`;
+  g.innerHTML = h;
+  const L = $('oLogo'); L.style.left = (960 - L.getBoundingClientRect().width / 2) + 'px';
+  $('oPill').style.left = (960 - $('oPill').offsetWidth / 2) + 'px';
+  $('subid').style.left = (980 - $('subid').offsetWidth) + 'px';
+  if (capture && capture.boites) cadresCapture(capture);
+}
+
+function cadresCapture(c) {
+  const k = 1120 / c.viewport[0], x0 = 400, y0 = 262 + 44;
+  const z = c.boites.zoneLien, m = c.boites.itemMenu;
+  if (z) Object.assign(ST.RING, { x: x0 + z.x * k - 7, y: y0 + z.y * k - 7, w: z.w * k + 14, h: z.h * k + 14 });
+  if (m) Object.assign($('ring2').style, { left: (x0 + m.x * k - 5) + 'px', top: (y0 + m.y * k - 5) + 'px',
+    width: (m.w * k + 10) + 'px', height: (m.h * k + 10) + 'px' });
+}
+
+function paintBase(t, tReel) {
+  const camFx = tr(t, 960, [[15.2,1060,'cam'],[17.35,960,'cam']]);
+  const camFy = tr(t, 540, [[12.7,823,'cam'],[17.35,540,'cam']]);
+  const camZ = tr(t, 1, [[12.7,1.16,'cam'],[15.2,1.2,'cam'],[17.35,1,'cam']]) + 0.012 * Math.sin(tReel * 0.35);
+  const wx = 960 - camFx * camZ, wy = 540 - camFy * camZ;
+  $('world').style.transform = `translate(${wx.toFixed(2)}px,${wy.toFixed(2)}px) scale(${camZ.toFixed(4)})`;
+  $('dots').style.transform = `translate(${(-(camFx - 960) * .25 - tReel * 6) % 40}px,${(-(camFy - 540) * .25) % 40}px)`;
+  put($('b1'), { x: 1080 + 90 * Math.sin(tReel * .23), y: -380 + 60 * Math.cos(tReel * .19) });
+  put($('b2'), { x: -260 + 70 * Math.cos(tReel * .21), y: 520 + 60 * Math.sin(tReel * .17) });
+  put($('b3'), { x: 1320 + 80 * Math.sin(tReel * .15 + 1), y: 560 + 70 * Math.cos(tReel * .2) });
+
+  put($('progCard'), enter(t, 2.52, 5.35, { dy: 50 }));
+
+  const sd = enter(t, 5.5, 8.3, { dx: 60, dy: 0, dxo: -80, dyo: 0, s0: .96 });
+  put($('side'), sd);
+  rowsSide.forEach((r, i) => {
+    const a = sp(t, 5.62 + i * .045, 'ui');
+    r.style.transform = `translateY(${(22 * (1 - a)).toFixed(2)}px)`; r.style.opacity = clamp(a).toFixed(3);
+    r.style.color = 'var(--ink)';
+  });
+  $('rowLink').style.opacity = t > 6.2 ? 0 : $('rowLink').style.opacity;
+
+  put($('form'), enter(t, 8.45, 17.3, { dy: 50, s0: .96 }));
+  const fade = 1 - clamp(sp(t, 12.9, 'soft'));
+  $('fTitle').style.opacity = fade.toFixed(3);
+  $('fUrlLbl').style.opacity = fade.toFixed(3);
+  put($('inputS'), { o: (t >= 12.35 ? 1 : 0) * fade });
+  const blurIn = clamp(sp(t, 12.45, 'ui'));
+  $('inputS').style.borderColor = rgba(trA(t, VIO, [[12.45,LINE,'ui']]));
+  $('inputS').style.boxShadow = `0 0 0 ${(7 * (1 - blurIn)).toFixed(2)}px color-mix(in srgb, var(--brand) 13%, transparent)`;
+  const kIn = sp(t, 9.12, 'play'), kOut = sp(t, 10.05, 'ui');
+  put($('keys'), { y: 30 * (1 - kIn) - 20 * kOut, s: .7 + .3 * kIn, o: clamp(kIn) * (1 - clamp(kOut)) });
+  const press = clamp(sp(t, 9.42, 'snap')) * (1 - clamp(sp(t, 9.6, 'snap')));
+  [...document.querySelectorAll('.kc')].forEach(k => { k.style.transform = `translateY(${(5 * press).toFixed(2)}px)`; k.style.borderBottomWidth = (6 - 4 * press).toFixed(2) + 'px'; });
+  const lk = io(t, 10.0, 10.88, 'ui', 'snap');
+  put($('looking'), { o: lk, y: 10 * (1 - clamp(sp(t, 10, 'ui'))) });
+  $('spin').style.transform = `rotate(${(t * 520) % 360}deg)`;
+  const pa = sp(t, 10.9, 'play');
+  put($('fPartLbl'), { o: clamp(sp(t, 10.86, 'ui')), y: 10 * (1 - clamp(sp(t, 10.86, 'ui'))) });
+  put($('sel'), { o: clamp(pa), s: .86 + .14 * pa, y: 14 * (1 - pa) });
+  const au = sp(t, 11.12, 'play');
+  put($('auto'), { o: clamp(au), s: .6 + .4 * au, x: -20 * (1 - au) });
+  put($('fLinkLbl'), { o: clamp(sp(t, 12.3, 'ui')), y: 10 * (1 - clamp(sp(t, 12.3, 'ui'))) });
+
+  const ph = enter(t, 17.5, 21.35, { dy: 70, s0: .9, so: .92 });
+  ph.r = -4 * (1 - clamp(sp(t, 17.5, 'def')));
+  put($('phone'), ph);
+  $('objet').style.transform = `translateY(${(3 * Math.sin(tReel * 2.4)).toFixed(2)}px)`;
+  const si = sp(t, 18.35, 'play'), so = sp(t, 21.3, 'ui');
+  put($('subid'), { o: clamp(si) * (1 - clamp(so)), s: .4 + .6 * si - .2 * so, x: 30 * (1 - si) });
+  $('subLine').style.opacity = (clamp(si) * (1 - clamp(so))).toFixed(3);
+  $('subLine').firstElementChild.style.strokeDashoffset = (190 * (1 - clamp(sp(t, 18.5, 'ui')))).toFixed(1);
+  const ta = sp(t, 19.35, 'play'), tb = sp(t, 19.95, 'ui');
+  put($('touch'), { o: clamp(ta) * (1 - clamp(tb)) * .95, s: .6 + .4 * clamp(ta, 0, 1.2) + imp(t, 19.6, -.3, 12, 20) });
+  const sa = sp(t, 19.85, 'play'), sao = sp(t, 21.25, 'ui');
+  put($('sale'), { o: clamp(sa) * (1 - clamp(sao)), s: .5 + .5 * sa, x: 30 * (1 - sa), y: -10 * sao });
+  const bd = t - 19.62;
+  [...$('burst').children].forEach(l => {
+    const a = (+l.dataset.a) * Math.PI / 180;
+    const p = clamp(bd / .55), e = 1 - Math.pow(1 - p, 3);
+    const r0 = 90 + 150 * e, r1 = r0 + 42 * (1 - p);
+    l.setAttribute('x1', (Math.cos(a) * r0).toFixed(1)); l.setAttribute('y1', (Math.sin(a) * r0 * .62).toFixed(1));
+    l.setAttribute('x2', (Math.cos(a) * r1).toFixed(1)); l.setAttribute('y2', (Math.sin(a) * r1 * .62).toFixed(1));
+    l.style.opacity = bd > 0 && p < 1 ? (1 - p).toFixed(3) : 0;
+  });
+
+  const re = enter(t, 21.5, 23.9, { dy: 80, s0: .9, so: 1.04, pin: 'def' });
+  put($('real'), re);
+  $('real').style.transform += ` perspective(1600px) rotateX(${(10 * (1 - clamp(sp(t, 21.5, 'def')))).toFixed(2)}deg)`;
+  const r2 = io(t, 22.35, 23.6, 'play', 'ui');
+  put($('ring2'), { o: r2 * (.75 + .25 * Math.sin(tReel * 7)), s: .8 + .2 * clamp(sp(t, 22.35, 'play')) });
+
+  const sh = $('shape');
+  const gx = geo(t, 'x'), gy = geo(t, 'y'), gw = geo(t, 'w'), gh = geo(t, 'h'), gr = geo(t, 'r');
+  const pulse = 1 + imp(t, 6.9, -.035) + imp(t, 15.85, .03) + imp(t, 19.6, -.05);
+  sh.style.transform = `translate(${gx.toFixed(2)}px,${gy.toFixed(2)}px) scale(${pulse.toFixed(4)})`;
+  sh.style.transformOrigin = `${(gw / 2).toFixed(1)}px ${(gh / 2).toFixed(1)}px`;
+  sh.style.width = Math.max(1, gw).toFixed(2) + 'px'; sh.style.height = Math.max(1, gh).toFixed(2) + 'px';
+  sh.style.borderRadius = Math.max(0, gr).toFixed(2) + 'px';
+  sh.style.backgroundColor = rgba(trA(t, VIO, BG_KEYS));
+  const bw = Math.max(0, tr(t, 0, [[8.45,2,'ui'],[12.35,0,'ui'],[21.75,5,'ui'],[23.55,0,'ui']]));
+  sh.style.borderWidth = bw.toFixed(2) + 'px';
+  sh.style.borderColor = rgba(trA(t, LINE, [[9.0,VIO,'snap']]));
+  const glow = Math.max(0, tr(t, 0, [[9.0,7,'snap'],[12.35,0,'ui'],[21.95,5,'ui'],[23.55,0,'ui']])) + (t > 22 && t < 23.6 ? 3 * Math.sin(tReel * 5) : 0);
+  const elev = Math.max(0, tr(t, 0, [[12.8,.12,'ui'],[17.45,.22,'ui'],[21.75,0,'ui']]));
+  const grn = Math.max(0, tr(t, 0, [[2.9,.25,'ui'],[5.55,0,'ui']]));
+  sh.style.boxShadow = `0 0 0 ${glow.toFixed(2)}px color-mix(in srgb, var(--brand) 14%, transparent), 0 18px 40px ${alpha(VIO, elev)}, 0 10px 24px ${alpha(SUC, grn)}`;
+  $('sheen').style.opacity = clamp(tr(t, 1, [[2.5,0,'ui'],[23.55,1,'def']])).toFixed(3);
+
+  const cc = io(t, 2.82, 5.5, 'ui', 'snap');
+  put($('cChip'), { o: cc });
+  $('cChip').style.transform = `translate(-50%,-50%) scale(${(.8 + .2 * clamp(sp(t, 2.82, 'play'))).toFixed(4)})`;
+  put($('cMenu'), { o: io(t, 6.18, 8.42, 'ui', 'snap') });
+  $('cMenu').style.color = rgba(trA(t, INK, [[6.9,VIO,'snap']]));
+  $('cMenu').style.fontWeight = t > 6.9 ? 600 : 500;
+  put($('cInput'), { o: t < 12.35 ? io(t, 8.85, 99) : 0 });
+  const wipe = clamp(sp(t, 9.5, 'snap'));
+  $('urlTxt').style.clipPath = `inset(-10px ${(100 - 100 * wipe).toFixed(2)}% -10px -2px)`;
+  $('urlTxt').style.transform = `translateX(${(-18 * (1 - wipe)).toFixed(2)}px)`;
+  $('caret1').style.opacity = t > 9.0 && t < 12.35 && (Math.floor(tReel * 2.2) % 2 === 0 || (t > 9.4 && t < 9.9)) ? 1 : 0;
+  put($('clearX'), { o: clamp(sp(t, 9.7, 'ui')) });
+  put($('cGen'), { o: io(t, 12.62, 13.18, 'ui', 'snap') });
+  $('shimmer').style.transform = `translateX(${(-420 + ((t - 12.6) * 1500) % 1700).toFixed(1)}px)`;
+
+  put($('cLink'), { o: io(t, 13.12, 17.42, 'snap', 'snap') });
+  const full = T.link.join(''), L0 = T.link[0].length, L1 = T.link[1].length;
+  const pr = clamp((t - 13.15) / .9), n = Math.round(full.length * (1 - Math.pow(1 - pr, 2.2)));
+  $('lPre').textContent = T.link[0].slice(0, n);
+  $('lMid').textContent = T.link[1].slice(0, Math.max(0, n - L0));
+  $('lPost').textContent = T.link[2].slice(0, Math.max(0, n - L0 - L1));
+  $('caret2').style.opacity = t > 13.1 && t < 14.4 ? ((pr < 1 || Math.floor(tReel * 4) % 2 === 0) ? 1 : 0) : 0;
+  const hl = io(t, 14.3, 17.05, 'ui', 'ui');
+  const hlE = $('hl');
+  hlE.style.left = (linkW.midL - 8) + 'px'; hlE.style.top = '-6px'; hlE.style.height = (linkW.h + 12) + 'px';
+  hlE.style.width = ((linkW.midW + 16) * hl).toFixed(1) + 'px'; hlE.style.opacity = hl.toFixed(3);
+  const ca = sp(t, 14.45, 'play'), cao = sp(t, 17.1, 'ui');
+  const cl = $('call');
+  cl.style.left = (linkW.midL + linkW.midW / 2 - 130) + 'px'; cl.style.width = '260px'; cl.style.top = (linkW.h + 8) + 'px';
+  const cv = clamp(ca) * (1 - clamp(cao));
+  cl.style.opacity = cv.toFixed(3); cl.style.visibility = cv > .001 ? 'visible' : 'hidden';
+  $('callLine').style.strokeDashoffset = (44 * (1 - clamp(sp(t, 14.45, 'ui')))).toFixed(1);
+  $('callTxt').style.transform = `scale(${(.6 + .4 * ca).toFixed(4)})`;
+  put($('copyIco'), { o: clamp(sp(t, 13.9, 'ui')), s: .6 + .4 * sp(t, 13.9, 'play') });
+  const ck = sp(t, 15.87, 'play');
+  put($('icCopy'), { o: 1 - clamp(sp(t, 15.87, 'snap')), s: 1 - .4 * clamp(sp(t, 15.87, 'snap')) });
+  put($('icCheck'), { o: clamp(ck), s: .3 + .7 * ck });
+
+  put($('cBtn'), { o: io(t, 17.8, 21.4, 'ui', 'snap') });
+  $('cBtn').style.transform = `translate(-50%,-50%) scale(${(.85 + .15 * clamp(sp(t, 17.8, 'play'))).toFixed(4)})`;
+
+  const cu = $('cursor');
+  const seg = CUR.find(c => t >= c.a - .01 && t <= c.b + .6);
+  if (seg) {
+    const cx = tr(t, seg.from[0], seg.mv.map(m => [m[0], m[1], m[3]]));
+    const cy = tr(t, seg.from[1], seg.mv.map(m => [m[0], m[2], m[3]]));
+    const pressC = seg.clicks.reduce((acc, c) => acc + imp(t, c, -.22, 12, 20), 0);
+    const vis = clamp(sp(t, seg.a, 'ui')) * (1 - clamp(sp(t, seg.b, 'ui')));
+    cu.style.transform = `translate(${(cx - 3).toFixed(2)}px,${(cy - 2).toFixed(2)}px) scale(${((1 + pressC) / camZ * 1.25).toFixed(4)})`;
+    cu.style.transformOrigin = '3px 2px';
+    cu.style.opacity = vis.toFixed(3); cu.style.visibility = vis > .001 ? 'visible' : 'hidden';
+  } else { cu.style.opacity = 0; cu.style.visibility = 'hidden'; }
+  const lastClick = CLICKS.filter(c => t >= c).pop();
+  const rp = $('ripple');
+  if (lastClick !== undefined && t - lastClick < .6 && seg) {
+    const d = (t - lastClick) / .6, e = 1 - Math.pow(1 - d, 3);
+    const cx = tr(lastClick, seg.from[0], seg.mv.map(m => [m[0], m[1], m[3]]));
+    const cy = tr(lastClick, seg.from[1], seg.mv.map(m => [m[0], m[2], m[3]]));
+    const R = 16 + 70 * e;
+    rp.style.transform = `translate(${(cx - R).toFixed(2)}px,${(cy - R).toFixed(2)}px)`;
+    rp.style.width = rp.style.height = (2 * R).toFixed(2) + 'px';
+    rp.style.opacity = (.9 * (1 - d)).toFixed(3); rp.style.visibility = 'visible';
+  } else { rp.style.opacity = 0; rp.style.visibility = 'hidden'; }
+
+  const hk = $('hook');
+  put($('over'), { o: io(t, .05, 2.3, 'ui', 'ui'), y: 16 * (1 - clamp(sp(t, .05))) });
+  hookLines.forEach((l, i) => {
+    const a = sp(t, .2 + i * .5, 'play'), b = sp(t, 2.28 + i * .06, 'ui');
+    l.style.transform = `translateY(${(115 * (1 - a) - 115 * b).toFixed(2)}%) rotate(${(-4 * (1 - clamp(a))).toFixed(2)}deg)`;
+    l.style.opacity = (1 - clamp(b * 1.6)).toFixed(3);
+  });
+  const mk = clamp(sp(t, 1.5, 'snap'));
+  $('hMarkBg').style.transform = `scaleX(${mk.toFixed(4)})`;
+  $('hWord').style.color = rgba(trA(t, WHT, [[1.55,INK,'snap']]));
+  const gd = clamp(sp(t, .3, 'soft')), gd2 = clamp(sp(t, .55, 'soft'));
+  $('gA').style.strokeDashoffset = (1 - gd).toFixed(4); $('gB').style.strokeDashoffset = (1 - gd2).toFixed(4);
+  const gOut = sp(t, 2.3, 'ui');
+  put($('glyph'), { o: io(t, .2, 2.3, 'ui', 'ui'), s: 1 + .06 * Math.sin(tReel * 2) - .6 * gOut, r: 10 * Math.sin(tReel * .9) + 90 * gOut });
+  hk.style.visibility = t < 3.2 ? 'visible' : 'hidden';
+
+  const CAPS = [[1, 2.85, 5.45], [2, 5.6, 8.35], [3, 8.55, 12.35], [4, 12.5, 17.3], [5, 17.5, 21.4], [6, 21.6, 23.45]];
+  const SUBS = { 1: [[3.03, 4.1], [4.15, 99]], 3: [[8.7, 10.9], [10.95, 99]], 4: [[12.7, 15.75], [15.82, 99]] };
+  CAPS.forEach(([k, a, b]) => {
+    const c = $('cap' + k), out = sp(t, b, 'ui');
+    const vis = t > a - .05 && t < b + .8;
+    c.style.visibility = vis ? 'visible' : 'hidden';
+    if (!vis) return;
+    c.style.transform = `translateY(${(-36 * out).toFixed(2)}px)`;
+    c.style.opacity = (1 - clamp(out)).toFixed(3);
+    c.style.filter = out > .02 ? `blur(${(8 * clamp(out)).toFixed(2)}px)` : 'none';
+    const bg = sp(t, a, 'play');
+    c.querySelector('.badge').style.transform = `scale(${clamp(bg, 0, 2).toFixed(4)}) rotate(${(-40 * (1 - clamp(bg))).toFixed(2)}deg)`;
+    capWords[k].forEach((w, i) => { w.style.transform = `translateY(${(112 * (1 - sp(t, a + .06 + i * .045, 'ui'))).toFixed(2)}%)`; });
+    const subs = [...c.querySelectorAll('.sub > div')];
+    const ranges = SUBS[k] || [[a + .18, 99]];
+    subs.forEach((s, i) => {
+      const [sa, sb] = ranges[i];
+      const si = sp(t, sa, 'ui'), so2 = sp(t, sb, 'ui');
+      s.style.opacity = (clamp(si) * (1 - clamp(so2))).toFixed(3);
+      s.style.transform = `translateY(${(18 * (1 - si) - 18 * so2).toFixed(2)}px)`;
+    });
+  });
+
+  const pv = io(t, 2.9, 23.45, 'ui', 'ui');
+  $('prog').style.opacity = pv.toFixed(3);
+  [...document.querySelectorAll('#prog i')].forEach((f, i) => {
+    f.style.transform = `scaleX(${clamp(sp(t, CAPS[i][1] + .1, 'def')).toFixed(4)})`;
+  });
+
+  const ol = sp(t, 24.0, 'play');
+  put($('oLogo'), { o: clamp(sp(t, 24.0, 'ui')), s: .7 + .3 * ol, y: 360 + 30 * (1 - ol) });
+  put($('oTitle'), { o: clamp(sp(t, 24.22, 'ui')), y: 30 * (1 - sp(t, 24.22, 'def')), blur: 8 * (1 - clamp(sp(t, 24.22, 'ui'))) });
+  const op = sp(t, 24.55, 'play');
+  put($('oPill'), { o: clamp(op), s: .8 + .2 * op, y: 16 * (1 - op) });
+  $('outro').style.visibility = t > 23.9 ? 'visible' : 'hidden';
+}
+
+function scene1(t, u) {
+  const dans = t >= 2.4 && t <= INS_A + INS_D;
+  put($('cApply'), { o: dans ? io(t, 2.82, 3.8, 'ui', 'snap') : 0 });
+  put($('cPend'), { o: dans ? io(t, 3.9, 5.02, 'ui', 'snap') : 0, s: .8 + .2 * clamp(sp(t, 3.9, 'play'), 0, 1.3) });
+  if (!dans) return;
+  const sh = $('shape');
+  sh.style.backgroundColor = rgba(trA(t, VIO, [[3.85, PEND, 'ui'], [5.05, GRN, 'ui']]));
+  const pulse = 1 + imp(t, 3.75, -.05) + imp(t, 5.05, .06);
+  sh.style.transform = `translate(${geo(u, 'x').toFixed(2)}px,${geo(u, 'y').toFixed(2)}px) scale(${pulse.toFixed(4)})`;
+  const vio = .30 * (1 - clamp(sp(t, 3.85, 'ui'))), ora = .22 * io(t, 3.85, 5.05), gr = .25 * clamp(sp(t, 5.05, 'ui'));
+  sh.style.boxShadow = `0 12px 30px ${alpha(VIO, vio)}, 0 10px 24px ${alpha(WARN, ora)}, 0 10px 24px ${alpha(SUC, gr)}`;
+  $('sheen').style.opacity = clamp(tr(t, 1, [[2.5, .5, 'ui'], [3.85, 0, 'ui']])).toFixed(3);
+  put($('cChip'), { o: clamp(sp(t, 5.1, 'ui')) });
+  $('cChip').style.transform = `translate(-50%,-50%) scale(${(.8 + .2 * clamp(sp(t, 5.1, 'play'), 0, 1.3)).toFixed(4)})`;
+  const subs = [...document.querySelectorAll('#cap1 .sub > div')];
+  const a1 = sp(t, 3.03, 'ui'), b1 = sp(t, 4.45, 'ui'), a2 = sp(t, 4.52, 'ui');
+  subs[0].style.opacity = (clamp(a1) * (1 - clamp(b1))).toFixed(3);
+  subs[0].style.transform = `translateY(${(18 * (1 - a1) - 18 * b1).toFixed(2)}px)`;
+  subs[1].style.opacity = clamp(a2).toFixed(3);
+  subs[1].style.transform = `translateY(${(18 * (1 - a2)).toFixed(2)}px)`;
+  const cu = $('cursor');
+  if (t >= 2.99 && t <= 4.9) {
+    const cx = tr(t, 1560, [[3.05, 1342, 'def']]), cy = tr(t, 1010, [[3.05, 592, 'def']]);
+    const vis = clamp(sp(t, 3.0, 'ui')) * (1 - clamp(sp(t, 4.2, 'ui')));
+    cu.style.transform = `translate(${(cx - 3).toFixed(2)}px,${(cy - 2).toFixed(2)}px) scale(${(1.25 * (1 + imp(t, 3.75, -.22, 12, 20))).toFixed(4)})`;
+    cu.style.transformOrigin = '3px 2px';
+    cu.style.opacity = vis.toFixed(3); cu.style.visibility = vis > .001 ? 'visible' : 'hidden';
+  }
+  const d = (t - 3.75) / .6, rp = $('ripple');
+  if (d >= 0 && d < 1) {
+    const e = 1 - Math.pow(1 - d, 3), R = 16 + 70 * e;
+    rp.style.transform = `translate(${(1342 - R).toFixed(2)}px,${(592 - R).toFixed(2)}px)`;
+    rp.style.width = rp.style.height = (2 * R).toFixed(2) + 'px';
+    rp.style.opacity = (.9 * (1 - d)).toFixed(3); rp.style.visibility = 'visible';
+  }
+}
+
+function paint(T) { const t = hold(T); const u = warp(t); paintBase(u, T); scene1(t, u); }
+
+demarrer({ duree: DURATION, fps: FPS, init, peindre: paint, polices: policesCharte(), attendre: [CAPTURE] });
+</script>
+</body>
+</html>

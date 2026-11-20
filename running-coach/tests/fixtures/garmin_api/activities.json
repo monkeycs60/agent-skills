@@ -1,0 +1,36 @@
+[
+ {
+  "activityId": 30000000001,
+  "activityName": "Footing",
+  "startTimeLocal": "2026-10-13 07:05:20",
+  "startTimeGMT": "2026-10-13 05:05:20",
+  "activityType": {
+   "typeId": 1,
+   "typeKey": "running"
+  },
+  "distance": 10000.0,
+  "duration": 3650.0,
+  "movingDuration": 3620.0,
+  "elapsedDuration": 3650.0,
+  "averageHR": 144.0,
+  "maxHR": 153.0,
+  "elevationGain": 31.0
+ },
+ {
+  "activityId": 30000000002,
+  "activityName": "Seuil",
+  "startTimeLocal": "2026-10-15 07:00:00",
+  "startTimeGMT": "2026-10-15 05:00:00",
+  "activityType": {
+   "typeId": 1,
+   "typeKey": "running"
+  },
+  "distance": 8500.0,
+  "duration": 2700.0,
+  "movingDuration": 2680.0,
+  "elapsedDuration": 2700.0,
+  "averageHR": 158.0,
+  "maxHR": 172.0,
+  "elevationGain": 38.0
+ }
+]

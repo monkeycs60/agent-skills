@@ -1,0 +1,104 @@
+<!doctype html>
+<html><head><meta charset="utf-8"><title>encodeur</title></head>
+<body style="background:#111;color:#ddd;font:14px monospace"><div id="log">encodage...</div>
+<script>
+const q = new URLSearchParams(location.search);
+const N = +q.get('n'), FPS = +q.get('fps'), OUT = q.get('out');
+const W = 1920, H = 1080, TS = FPS * 1000, DELTA = 1000;
+
+const enc8 = (s) => new TextEncoder().encode(s);
+const u32 = (v) => { const b = new Uint8Array(4); new DataView(b.buffer).setUint32(0, v >>> 0); return b; };
+const u16 = (v) => { const b = new Uint8Array(2); new DataView(b.buffer).setUint16(0, v & 0xffff); return b; };
+const zeros = (n) => new Uint8Array(n);
+function cat(parts) { let n = 0; for (const p of parts) n += p.length; const o = new Uint8Array(n); let k = 0; for (const p of parts) { o.set(p, k); k += p.length; } return o; }
+function box(type, ...parts) { const body = cat(parts); return cat([u32(body.length + 8), enc8(type), body]); }
+function fbox(type, version, flags, ...parts) { return box(type, new Uint8Array([version, (flags >> 16) & 255, (flags >> 8) & 255, flags & 255]), ...parts); }
+const MATRIX = cat([u32(0x00010000), u32(0), u32(0), u32(0), u32(0x00010000), u32(0), u32(0), u32(0), u32(0x40000000)]);
+
+function moov(desc, sizes, keys, offset) {
+  const n = sizes.length, durTS = n * DELTA, durMs = Math.round(n * 1000 / FPS);
+  const mvhd = fbox('mvhd', 0, 0, u32(0), u32(0), u32(1000), u32(durMs), u32(0x00010000), u16(0x0100), u16(0), u32(0), u32(0), MATRIX, zeros(24), u32(2));
+  const tkhd = fbox('tkhd', 0, 3, u32(0), u32(0), u32(1), u32(0), u32(durMs), u32(0), u32(0), u16(0), u16(0), u16(0), u16(0), MATRIX, u32(W << 16), u32(H << 16));
+  const mdhd = fbox('mdhd', 0, 0, u32(0), u32(0), u32(TS), u32(durTS), u16(0x55C4), u16(0));
+  const hdlr = fbox('hdlr', 0, 0, u32(0), enc8('vide'), zeros(12), enc8('VideoHandler\0'));
+  const vmhd = fbox('vmhd', 0, 1, u16(0), u16(0), u16(0), u16(0));
+  const dinf = box('dinf', fbox('dref', 0, 0, u32(1), fbox('url ', 0, 1)));
+  const avc1 = box('avc1', zeros(6), u16(1), u16(0), u16(0), zeros(12), u16(W), u16(H), u32(0x00480000), u32(0x00480000),
+    u32(0), u16(1), zeros(32), u16(0x0018), u16(0xFFFF), box('avcC', desc),
+    box('colr', enc8('nclx'), u16(1), u16(1), u16(1), new Uint8Array([0])));
+  const stsd = fbox('stsd', 0, 0, u32(1), avc1);
+  const stts = fbox('stts', 0, 0, u32(1), u32(n), u32(DELTA));
+  const stss = fbox('stss', 0, 0, u32(keys.length), ...keys.map(u32));
+  const stsc = fbox('stsc', 0, 0, u32(1), u32(1), u32(n), u32(1));
+  const stsz = fbox('stsz', 0, 0, u32(0), u32(n), ...sizes.map(u32));
+  const stco = fbox('stco', 0, 0, u32(1), u32(offset));
+  const stbl = box('stbl', stsd, stts, stss, stsc, stsz, stco);
+  const mdia = box('mdia', mdhd, hdlr, box('minf', vmhd, dinf, stbl));
+  return box('moov', mvhd, box('trak', tkhd, mdia));
+}
+
+const cv = new OffscreenCanvas(W, H);
+const cx = cv.getContext('2d', { willReadFrequently: true });
+const YUV = new Uint8Array(W * H * 3 / 2);
+function versI420(img) {
+  cx.drawImage(img, 0, 0);
+  const d = cx.getImageData(0, 0, W, H).data, U0 = W * H, V0 = U0 + W * H / 4;
+  for (let p = 0, i = 0; p < W * H; p++, i += 4) YUV[p] = (16 + (46.559 * d[i] + 156.629 * d[i + 1] + 15.812 * d[i + 2]) / 255 + .5) | 0;
+  for (let y = 0; y < H; y += 2) for (let x = 0; x < W; x += 2) {
+    const a = (y * W + x) * 4, b = a + 4, c = a + W * 4, e = c + 4;
+    const r = (d[a] + d[b] + d[c] + d[e]) / 4, g = (d[a + 1] + d[b + 1] + d[c + 1] + d[e + 1]) / 4, bl = (d[a + 2] + d[b + 2] + d[c + 2] + d[e + 2]) / 4;
+    const k = (y >> 1) * (W >> 1) + (x >> 1);
+    YUV[U0 + k] = (128 + (-25.664 * r - 86.336 * g + 112 * bl) / 255 + .5) | 0;
+    YUV[V0 + k] = (128 + (112 * r - 101.73 * g - 10.27 * bl) / 255 + .5) | 0;
+  }
+  return YUV;
+}
+const ESPACE = { primaries: 'bt709', transfer: 'bt709', matrix: 'bt709', fullRange: false };
+
+window.ENCODE = (async () => {
+  const log = (m) => { document.getElementById('log').textContent = m; };
+  let cfg = null;
+  for (const codec of ['avc1.64002A', 'avc1.640028', 'avc1.4D402A', 'avc1.42E02A']) {
+    const c = { codec, width: W, height: H, bitrate: 6_000_000, framerate: FPS, avc: { format: 'avc' }, bitrateMode: 'variable', latencyMode: 'quality' };
+    try { const s = await VideoEncoder.isConfigSupported(c); if (s.supported) { cfg = c; break; } } catch (e) {}
+  }
+  if (!cfg) return { ok: false, err: 'aucun encodeur H.264 dans ce navigateur' };
+
+  const chunks = []; let desc = null, erreur = null;
+  const enc = new VideoEncoder({
+    output: (chunk, meta) => {
+      if (!desc && meta && meta.decoderConfig && meta.decoderConfig.description) desc = new Uint8Array(meta.decoderConfig.description);
+      const b = new Uint8Array(chunk.byteLength); chunk.copyTo(b);
+      chunks.push({ b, ts: chunk.timestamp, key: chunk.type === 'key' });
+    },
+    error: (e) => { erreur = e.message; }
+  });
+  enc.configure(cfg);
+  for (let i = 0; i < N; i++) {
+    if (erreur) break;
+    const r = await fetch('/frames/f' + String(i).padStart(5, '0') + '.jpg');
+    if (!r.ok) return { ok: false, err: 'image manquante ' + i };
+    const bmp = await createImageBitmap(await r.blob());
+    const fr = new VideoFrame(versI420(bmp), { format: 'I420', codedWidth: W, codedHeight: H, colorSpace: ESPACE, timestamp: Math.round(i * 1e6 / FPS), duration: Math.round(1e6 / FPS) });
+    enc.encode(fr, { keyFrame: i % (FPS * 2) === 0 });
+    fr.close(); bmp.close();
+    while (enc.encodeQueueSize > 6) await new Promise(r => setTimeout(r, 2));
+    if (i % 60 === 0) log('image ' + i + ' / ' + N);
+  }
+  await enc.flush(); enc.close();
+  if (erreur) return { ok: false, err: erreur };
+  if (!desc) return { ok: false, err: 'configuration avcC absente' };
+  for (let i = 1; i < chunks.length; i++) if (chunks[i].ts <= chunks[i - 1].ts) return { ok: false, err: 'images B detectees, ordre non monotone en ' + i };
+
+  const sizes = chunks.map(c => c.b.length);
+  const keys = chunks.map((c, i) => c.key ? i + 1 : 0).filter(Boolean);
+  const ftyp = box('ftyp', enc8('isom'), u32(512), enc8('isom'), enc8('iso2'), enc8('avc1'), enc8('mp41'));
+  const dataLen = sizes.reduce((a, b) => a + b, 0);
+  let mv = moov(desc, sizes, keys, 0);
+  mv = moov(desc, sizes, keys, ftyp.length + mv.length + 8);
+  const blob = new Blob([ftyp, mv, u32(dataLen + 8), enc8('mdat'), ...chunks.map(c => c.b)], { type: 'video/mp4' });
+  const rep = await fetch('/save?f=' + encodeURIComponent(OUT), { method: 'POST', body: blob });
+  log('termine');
+  return { ok: rep.ok, codec: cfg.codec, images: chunks.length, cles: keys.length, octets: blob.size, moSec: +(blob.size / 1e6).toFixed(2) };
+})();
+</script></body></html>

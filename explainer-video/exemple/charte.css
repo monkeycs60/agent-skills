@@ -1,0 +1,39 @@
+/* Charte de Coche, produit fictif de l'exemple. Source de chaque valeur : exemple/maquette.html. */
+
+@font-face { font-family: 'Inter'; src: url('assets/polices/inter-latin-wght.woff2') format('woff2'); font-weight: 100 900; font-display: block; }
+
+:root {
+  --nom: "Coche";                          /* .logo de la maquette */
+  --logo-clair: none;                      /* aucun fichier de logo : le nom s'ecrit en police de titre */
+  --logo-fonce: none;
+
+  --font-title: 'Inter', system-ui, sans-serif;   /* body, font-family */
+  --font-body: 'Inter', system-ui, sans-serif;
+
+  --brand: #2563EB;          /* --primary */
+  --ink: #0F172A;            /* --foreground */
+  --bg: #F6F7FB;             /* --background */
+  --surface: #FFFFFF;        /* --card */
+  --line: #E2E8F0;           /* --border */
+  --muted: #64748B;          /* --muted-foreground */
+  --txt2: #475569;           /* --secondary-foreground */
+  --accent: #FFD166;         /* --highlight (pastille NOUVEAU) */
+  --success: #16A34A; --success-bg: #DCFCE7; --success-ink: #166534;   /* --success, --success-bg, --success-fg */
+  --warning: #D97706; --warning-bg: #FEF3C7; --warning-ink: #92400E;   /* --warning, --warning-bg, --warning-fg */
+
+  --radius-card: 28px;       /* --radius 14px, double */
+  --radius-field: 16px;      /* --radius-input 8px, double */
+
+  --tint: #E7EEFD;           /* --primary-soft, item de menu actif */
+
+  --brand-deep: color-mix(in srgb, var(--brand) 72%, black);
+  --brand-light: color-mix(in srgb, var(--brand) 70%, white);
+  --tint-2: color-mix(in srgb, var(--brand) 7%, white);
+  --on-brand-soft: color-mix(in srgb, var(--brand) 25%, white);
+  --dots: color-mix(in srgb, var(--brand) 20%, white);
+  --track: color-mix(in srgb, var(--brand) 17%, white);
+  --shadow: color-mix(in srgb, var(--brand) 18%, #140F24);
+  --halo-1: color-mix(in srgb, var(--brand) 14%, white);
+  --halo-2: color-mix(in srgb, var(--accent) 32%, white);
+  --halo-3: color-mix(in srgb, var(--brand-light) 10%, #FFE3EE);
+}

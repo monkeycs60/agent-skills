@@ -1,0 +1,26 @@
+{
+  "chaine": "Coche",
+  "film": "Inviter son équipe",
+  "duree": 36.7,
+  "titre": "Partager une liste de tâches avec son équipe sur Coche",
+  "description": "Partagez une liste de tâches avec votre équipe sur Coche (lien d'invitation) : rejoignez l'espace, collez l'adresse de la liste, puis envoyez le lien.\n\nAu programme\n00:00 Rejoindre un espace et ouvrir « Inviter »\n00:12 Coller l'adresse de la liste et copier le lien\n00:24 Envoyer le lien à votre équipe\n\nEn résumé\n1. Dans Espaces, demandez à rejoindre l'espace de l'équipe. Une fois la demande acceptée, vous êtes « Membre ».\n2. Dans le menu, rubrique Outils, ouvrez « Inviter ».\n3. Collez l'adresse de la liste. L'espace est reconnu automatiquement.\n4. Votre lien d'invitation s'affiche aussitôt, sans bouton à cliquer. Copiez-le en un clic.\n5. Envoyez-le à votre équipe : un clic suffit pour rejoindre la liste.\n\nLa doc complète :\nhttps://coche.example/doc/inviter\n\n#Coche #productivité #tutoriel",
+  "tags": [
+    "partager une liste de tâches",
+    "lien d'invitation",
+    "inviter son équipe",
+    "liste partagée",
+    "Coche",
+    "tuto Coche",
+    "gestion de tâches",
+    "travail en équipe",
+    "application de tâches",
+    "productivité"
+  ],
+  "reglages": {
+    "Langue de la vidéo": "Français",
+    "Catégorie": "Éducation",
+    "Public": "Non, elle n'est pas conçue pour les enfants",
+    "Chapitres automatiques": "Désactivés : les chapitres de la description suffisent",
+    "Écran de fin": "Facultatif. S'il est ajouté, 5 s au plus, pour ne pas masquer le vrai écran"
+  }
+}

@@ -1,0 +1,18 @@
+{
+ "sex": "female",
+ "hr_max": 187,
+ "hr_rest": 48,
+ "reference_race": {
+  "distance_km": 10,
+  "time": "47:30"
+ },
+ "goal": {
+  "name": "Semi-marathon de printemps",
+  "distance_km": 21.1,
+  "date": "2027-03-14",
+  "target_time": "1:44:00"
+ },
+ "weekly_km": 38,
+ "runs_per_week": 4,
+ "long_run_day": "sun"
+}

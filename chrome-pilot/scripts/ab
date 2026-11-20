@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+find_agent_browser() {
+  if [ -n "${AGENT_BROWSER_BIN:-}" ]; then
+    printf '%s\n' "$AGENT_BROWSER_BIN"
+    return 0
+  fi
+  local candidate found=""
+  for candidate in \
+    "$HOME/.local/bin/agent-browser" \
+    "$(command -v agent-browser 2>/dev/null || true)" \
+    "${NVM_BIN:-/nonexistent}/agent-browser" \
+    /opt/homebrew/bin/agent-browser \
+    /usr/local/bin/agent-browser \
+    "$HOME/.bun/bin/agent-browser" \
+    "$HOME/.volta/bin/agent-browser"; do
+    if [ -n "$candidate" ] && [ -x "$candidate" ]; then
+      printf '%s\n' "$candidate"
+      return 0
+    fi
+  done
+  for candidate in "${NVM_DIR:-$HOME/.nvm}"/versions/node/*/bin/agent-browser; do
+    [ -x "$candidate" ] && found="$candidate"
+  done
+  if [ -z "$found" ] && command -v npm >/dev/null 2>&1; then
+    candidate="$(npm prefix -g 2>/dev/null || true)/bin/agent-browser"
+    [ -x "$candidate" ] && found="$candidate"
+  fi
+  [ -n "$found" ] && printf '%s\n' "$found"
+}
+
+bin="$(find_agent_browser || true)"
+if [ -z "$bin" ] || [ ! -x "$bin" ]; then
+  echo "ab: agent-browser introuvable. Lancer install.sh du skill chrome-pilot, ou définir AGENT_BROWSER_BIN." >&2
+  exit 127
+fi
+
+for arg in "$@"; do
+  case "$arg" in
+    --session|--session=*|--cdp|--cdp=*|--auto-connect|--no-auto-connect)
+      echo "ab: $arg est fixé par le wrapper. Utiliser AB_SESSION=<nom>, AB_ISOLATED=1 ou AB_CDP=<port|url>." >&2
+      exit 2 ;;
+  esac
+done
+
+key="${AB_SESSION:-}"
+if [ -z "$key" ]; then
+  key="${CLAUDE_CODE_SESSION_ID:-${CODEX_THREAD_ID:-}}"
+  key="${key//-/}"
+  key="${key:0:12}"
+fi
+if [ -z "$key" ]; then
+  dir="$(git rev-parse --show-toplevel 2>/dev/null || pwd -P)"
+  key="dir$(printf '%s' "$dir" | cksum | cut -d ' ' -f 1)"
+fi
+key="$(printf '%s' "$key" | tr -c 'A-Za-z0-9_-' '-')"
+key="${key:0:40}"
+
+if [ "${AB_ISOLATED:-0}" = 1 ]; then
+  unset AGENT_BROWSER_CDP AGENT_BROWSER_AUTO_CONNECT AGENT_BROWSER_PROVIDER
+  args=(--session "cp-iso-$key" --no-auto-connect)
+  real=0
+else
+  args=(--session "cp-$key" --pin-tab)
+  if [ -n "${AB_CDP:-}" ]; then args+=(--cdp "$AB_CDP"); else args+=(--auto-connect); fi
+  real=1
+fi
+
+case "${1:-}" in
+  close|quit|exit)
+    for arg in "$@"; do
+      if [ "$arg" = --all ]; then
+        echo "ab: close --all fermerait les navigateurs des autres conversations. ab close ferme seulement celui de cette conversation." >&2
+        exit 2
+      fi
+    done
+    if [ "$real" = 1 ]; then
+      shift
+      set -- tab close "$@"
+    fi ;;
+  record)
+    case "${2:-}" in
+      start|restart) [[ " $* " == *" --cursor "* ]] || set -- "$@" --cursor ;;
+    esac ;;
+esac
+
+case "${1:-}" in
+  record|screenshot|pdf)
+    for arg in "$@"; do
+      case "$arg" in
+        *://*|data:*) ;;
+        */*.png|*/*.jpg|*/*.jpeg|*/*.webp|*/*.webm|*/*.mp4|*/*.pdf) mkdir -p "$(dirname "$arg")" ;;
+      esac
+    done ;;
+esac
+
+if [ "$real" = 0 ] || [ "${1:-}" = tab ]; then
+  exec "$bin" "${args[@]}" "$@"
+fi
+
+err="$(mktemp "${TMPDIR:-/tmp}/ab-err.XXXXXX")"
+trap 'rm -f "$err"' EXIT
+status=0
+"$bin" "${args[@]}" "$@" 2>"$err" || status=$?
+if [ "$status" -ne 0 ] && grep -q tab_gone "$err"; then
+  "$bin" "${args[@]}" tab new about:blank >/dev/null 2>&1 || true
+  status=0
+  "$bin" "${args[@]}" "$@" 2>"$err" || status=$?
+fi
+cat "$err" >&2
+if [ "$status" -ne 0 ] && grep -q -E "No running Chrome|DevToolsActivePort|Failed to connect" "$err"; then
+  echo "ab: Chrome n'est pas joignable. Il doit être ouvert, avec le débogage à distance autorisé dans chrome://inspect/#remote-debugging, et la demande de connexion acceptée. Pour une page qui n'exige aucune connexion : AB_ISOLATED=1 ab …" >&2
+fi
+exit "$status"
