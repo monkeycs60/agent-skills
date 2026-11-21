@@ -6,9 +6,10 @@ if [ "$#" -gt 0 ]; then skills=("$@")
 else skills=(); for d in "$repo"/*/; do [ -f "$d/SKILL.md" ] && skills+=("$(basename "$d")"); done
 fi
 
+status=0
 mkdir -p "$HOME/.claude/skills"
 for skill in "${skills[@]}"; do
-  if [ ! -f "$repo/$skill/SKILL.md" ]; then echo "✗ $skill: unknown skill"; continue; fi
+  if [ ! -f "$repo/$skill/SKILL.md" ]; then echo "✗ $skill: unknown skill"; status=1; continue; fi
   echo "→ $skill"
   for dir in "$HOME/.claude/skills" "$HOME/.codex/skills" "$HOME/.agents/skills"; do
     [ -d "$dir" ] || continue
@@ -18,5 +19,8 @@ for skill in "${skills[@]}"; do
     else ln -s "$repo/$skill" "$target" && echo "  ✓ $target → $repo/$skill"
     fi
   done
-  [ -f "$repo/$skill/install.sh" ] && bash "$repo/$skill/install.sh"
+  if [ -f "$repo/$skill/install.sh" ]; then
+    bash "$repo/$skill/install.sh" || { echo "✗ $skill: its install.sh failed"; status=1; }
+  fi
 done
+exit "$status"

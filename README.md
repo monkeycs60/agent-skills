@@ -8,9 +8,29 @@ Skills for [Claude Code](https://code.claude.com) and Codex: folders of instruct
 npx skills add monkeycs60/agent-skills
 ```
 
-| [`youtube-digest`](youtube-digest/): a 23-minute talk becomes a report with a verdict, 9 timestamped key points, 2 diagrams and 4 copyable steps, the full transcript alongside ([whole report](docs/youtube-digest-full.webp)) | [`explainer-video`](explainer-video/): the bundled example, a 37-second 1080p 60 fps film written in HTML, rendered and verified in under 2 minutes |
-|---|---|
-| <a href="docs/youtube-digest-full.webp"><img src="docs/youtube-digest.png" alt="youtube-digest report: thumbnail, one-sentence summary, verdict and key moments of a 23-minute video"></a> | <img src="docs/explainer-video.webp" alt="explainer-video example: animated step-by-step guide to inviting a team to a shared list"> |
+## Examples
+
+Real runs on my computer, with my own data where a skill needs some. Click an image to see it full size.
+
+<table>
+<tr>
+<td width="33%" valign="top"><a href="docs/youtube-digest-full.webp"><img src="docs/youtube-digest.webp" width="100%" alt="youtube-digest report: thumbnail, one-sentence summary, verdict and key moments of a 23-minute video"></a><br><b><a href="youtube-digest/"><code>youtube-digest</code></a></b><br><sub>A 23-minute talk becomes a report: verdict, 9 timestamped key points, 2 diagrams, the full transcript.</sub></td>
+<td width="33%" valign="top"><a href="docs/deep-research-full.webp"><img src="docs/deep-research.webp" width="100%" alt="deep-research report: question, verdict and comparison table of speech-to-text engines"></a><br><b><a href="deep-research/"><code>deep-research</code></a></b><br><sub>12 local speech-to-text engines compared from 29 dated sources in 12 minutes, settled at the source.</sub></td>
+<td width="33%" valign="top"><a href="docs/explainer-video.webp"><img src="docs/explainer-video.webp" width="100%" alt="explainer-video example: animated step-by-step guide to inviting a team to a shared list"></a><br><b><a href="explainer-video/"><code>explainer-video</code></a></b><br><sub>The bundled example: a 37-second 1080p 60 fps film written in HTML, rendered in under 2 minutes.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="docs/chrome-pilot.webp"><img src="docs/chrome-pilot.webp" width="100%" alt="chrome-pilot proof video: an agent drives the TodoMVC demo"></a><br><b><a href="chrome-pilot/"><code>chrome-pilot</code></a></b><br><sub>An agent adds, ticks and filters todos in an isolated headless Chrome, filmed with its pointer.</sub></td>
+<td width="33%" valign="top"><a href="docs/running-coach.webp"><img src="docs/running-coach.webp" width="100%" alt="running-coach output: training status, next workout and km splits of a long run"></a><br><b><a href="running-coach/"><code>running-coach</code></a></b><br><sub>241 real runs: the next workout 12 days before a marathon, and a long run that drifted out of Z2.</sub></td>
+<td width="33%" valign="top"><a href="docs/generate-asset.webp"><img src="docs/generate-asset.webp" width="100%" alt="generate-asset contact sheet of six generated potion icons and their WebP conversions"></a><br><b><a href="generate-asset/"><code>generate-asset</code></a></b><br><sub>Six potion icons from Codex CLI in 10 minutes, checked on a contact sheet, 4.7 MB of PNG down to 438 KB.</sub></td>
+</tr>
+<tr>
+<td width="33%" valign="top"><a href="docs/devils-advocate.webp"><img src="docs/devils-advocate.webp" width="100%" alt="devils-advocate session transcript challenging a browser extension idea"></a><br><b><a href="devils-advocate/"><code>devils-advocate</code></a></b><br><sub>A real session: one challenge per message, then 5 web searches and a verdict with red flags.</sub></td>
+<td width="33%" valign="top"><a href="docs/thinking-partner.webp"><img src="docs/thinking-partner.webp" width="100%" alt="thinking-partner session transcript about rewriting a backend from Node to Go"></a><br><b><a href="thinking-partner/"><code>thinking-partner</code></a></b><br><sub>A real session: one question per reply, then frank pushback on a big-bang rewrite.</sub></td>
+<td width="33%" valign="top"><a href="docs/visual-report.webp"><img src="docs/visual-report.webp" width="100%" alt="visual-report viewer: a before/after pair of videos playing side by side, then a pair of screenshots"></a><br><b><a href="visual-report/"><code>visual-report</code></a></b><br><sub>A before/after report of this README in one 1.7 MiB file; its viewer plays both videos side by side.</sub></td>
+</tr>
+</table>
+
+## Skills
 
 | Skill | What it does | Requirements |
 |---|---|---|
@@ -26,25 +46,7 @@ npx skills add monkeycs60/agent-skills
 
 Every skill is written in English and tells the agent to answer, and to write its reports, in the language of your request.
 
-## Examples
-
-Real runs on my computer, with my own data where a skill needs some.
-
-| [`chrome-pilot`](chrome-pilot/): an agent adds, ticks and filters todos in an isolated headless Chrome, filmed with `ab record`, pointer and clicks drawn in | [`visual-report`](visual-report/): a before/after report of this README built from two takes on GitHub: one 1.7 MiB file whose viewer plays both videos side by side |
-|---|---|
-| <img src="docs/chrome-pilot.webp" alt="chrome-pilot proof video: an agent drives the TodoMVC demo"> | <img src="docs/visual-report.webp" alt="visual-report viewer: a before/after pair of videos playing side by side, then a pair of screenshots"> |
-
-| [`deep-research`](deep-research/): 12 local speech-to-text engines compared from 29 dated sources in 12 minutes, contradictions settled at the primary source ([whole report](docs/deep-research-full.webp)) | [`running-coach`](running-coach/): real output on 2.5 years of Strava and Garmin runs: the next workout 12 days before a marathon, and a long run whose last 5 km drifted out of Z2 |
-|---|---|
-| <a href="docs/deep-research-full.webp"><img src="docs/deep-research.png" alt="deep-research report: question, verdict and comparison table of speech-to-text engines"></a> | <img src="docs/running-coach.png" alt="running-coach terminal output: training status, next workout and km splits of a long run"> |
-
-| [`generate-asset`](generate-asset/): six potion icons with real transparency from Codex CLI in 10 minutes, reviewed on a contact sheet, 4.7 MB of PNG down to 438 KB of WebP | [`devils-advocate`](devils-advocate/): a real Claude Code session: one challenge per message, then 5 web searches and a verdict with red flags, unknowns, strengths and a pivot |
-|---|---|
-| <img src="docs/generate-asset.png" alt="generate-asset contact sheet of six generated potion icons and their WebP conversions"> | <img src="docs/devils-advocate.png" alt="devils-advocate session transcript challenging a browser extension idea"> |
-
-[`thinking-partner`](thinking-partner/): a real Claude Code session: one question per reply, then frank pushback on a big-bang rewrite with the time budget worked out
-
-<img src="docs/thinking-partner.png" width="49%" alt="thinking-partner session transcript about rewriting a backend from Node to Go">
+Every skill is written in English and tells the agent to answer, and to write its reports, in the language of your request.
 
 ## Install
 
@@ -72,9 +74,12 @@ Linux and macOS. `youtube-digest` must run on a personal computer: YouTube block
 
 ## Quality
 
-- `python tests/check_skills.py` checks every skill on each push (GitHub Actions): frontmatter, English description under 300 characters, referenced files, `bash -n`, Python 3.10 syntax, `node --check`, executable bits.
-- Each skill with scripts was installed and exercised from a clean clone in fresh Docker containers (Python 3.10, Node 20 and 22), with or without optional tools.
-- No skill contains a key or personal data: secrets are read from the environment or from the user's config directory.
+Every push runs two checks on GitHub Actions, with Python 3.10:
+
+- `tests/check_skills.py` checks the structure: every skill listed in `tests/skills.txt` is present and nothing else; frontmatter is strict YAML (no duplicate keys, name matching the folder, English description under 300 characters); every link and file path in a skill's documents exists inside the skill; no orphan document, stray file or broken symlink; `bash -n`, Python 3.10 syntax, `node --check`, and JSON and YAML parsing of every file.
+- `tests/run_tests.py` checks the behaviour, offline and without any account or key: running-coach's own tests and a full offline run, a visual-report build of its starter report, youtube-digest's transcript-to-report round trip and search, generate-asset's WebP and contact-sheet conversion, `install.sh` in a throwaway home folder, and `npx skills add` of every skill, file by file.
+
+To run them locally: `pip install -r tests/requirements.txt`, then `python tests/check_skills.py && python tests/run_tests.py`. Each skill with scripts was also installed and exercised from a clean clone in fresh Docker containers (Python 3.10, Node 20 and 22). No skill contains a key or personal data: secrets are read from the environment or from the user's config directory.
 
 ## Before you use them
 

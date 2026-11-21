@@ -1,0 +1,9 @@
+chrome-pilot
+deep-research
+devils-advocate
+explainer-video
+generate-asset
+running-coach
+thinking-partner
+visual-report
+youtube-digest
