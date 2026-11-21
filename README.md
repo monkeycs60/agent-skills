@@ -26,7 +26,7 @@ Real runs on my computer, with my own data where a skill needs some. Click an im
 <tr>
 <td width="33%" valign="top"><a href="docs/devils-advocate.webp"><img src="docs/devils-advocate.webp" width="100%" alt="devils-advocate session transcript challenging a browser extension idea"></a><br><b><a href="devils-advocate/"><code>devils-advocate</code></a></b><br><sub>A real session: one challenge per message, then 5 web searches and a verdict with red flags.</sub></td>
 <td width="33%" valign="top"><a href="docs/thinking-partner.webp"><img src="docs/thinking-partner.webp" width="100%" alt="thinking-partner session transcript about rewriting a backend from Node to Go"></a><br><b><a href="thinking-partner/"><code>thinking-partner</code></a></b><br><sub>A real session: one question per reply, then frank pushback on a big-bang rewrite.</sub></td>
-<td width="33%" valign="top"><a href="docs/visual-report.webp"><img src="docs/visual-report.webp" width="100%" alt="visual-report viewer: a before/after pair of videos playing side by side, then a pair of screenshots"></a><br><b><a href="visual-report/"><code>visual-report</code></a></b><br><sub>A before/after report of this README in one 1.7 MiB file; its viewer plays both videos side by side.</sub></td>
+<td width="33%" valign="top"><a href="docs/visual-report.webp"><img src="docs/visual-report.webp" width="100%" alt="visual-report viewer: this README before and after its gallery, two takes playing side by side"></a><br><b><a href="visual-report/"><code>visual-report</code></a></b><br><sub>A before/after report of this README in one 4.5 MiB file; its viewer plays both takes side by side.</sub></td>
 </tr>
 </table>
 
