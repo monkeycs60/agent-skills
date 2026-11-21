@@ -2,10 +2,13 @@
 """Turn a draft HTML page and its local media into one self-contained report."""
 import argparse
 import base64
+import hashlib
 import html
 import json
+import os
 import pathlib
 import re
+import shutil
 import sys
 import webbrowser
 from urllib.parse import unquote
@@ -21,6 +24,7 @@ BUDGETS = {"pupitre": 2 * 1024 * 1024, "browser": 25 * 1024 * 1024}
 MARKER = "data-visual-report"
 TAG = re.compile(r"<(img|video|source)\b[^>]*>", re.I)
 ATTR = re.compile(r"""\b(src|poster)\s*=\s*(["'])(.*?)\2""", re.I | re.S)
+CONSOLE_BROWSERS = {"www-browser", "links", "elinks", "lynx", "w3m"}
 LOCAL_LINK = re.compile(r"""<a\b[^>]*\bhref\s*=\s*(["'])(?!https?:|mailto:|#|data:)([^"']+)\1""", re.I)
 
 
@@ -74,7 +78,7 @@ def ensure_document(text, title):
             f'<body>\n<main class="report">\n{text}\n</main>\n</body>\n</html>\n')
 
 
-def inject(text, target):
+def inject(text, target, build_id):
     if MARKER in text:
         return text
     head_extra = []
@@ -85,16 +89,53 @@ def inject(text, target):
     if head_extra:
         text = re.sub(r"(<head\b[^>]*>)", lambda m: m.group(1) + "\n" + "\n".join(head_extra), text, count=1, flags=re.I)
     css = (TEMPLATE / "report.css").read_text(encoding="utf-8")
-    style = f"<style {MARKER}>\n{css}</style>\n"
+    style = f'<style {MARKER}="{build_id}">\n{css}</style>\n'
     text = re.sub(r"(</head>)", lambda m: style + m.group(1), text, count=1, flags=re.I)
     if target == "browser":
         js = (TEMPLATE / "viewer.js").read_text(encoding="utf-8")
-        script = f"<script {MARKER}>\n{js}</script>\n"
+        script = f'<script {MARKER}="{build_id}">\n{js}</script>\n'
         if re.search(r"</body>", text, re.I):
             text = re.sub(r"(</body>)", lambda m: script + m.group(1), text, count=1, flags=re.I)
         else:
             text += script
     return text
+
+
+def deliver(out, folder, build_id):
+    folder.mkdir(parents=True, exist_ok=True)
+    target, n = folder / out.name, 2
+    while target.exists() and f'{MARKER}="{build_id}"' not in target.read_text(encoding="utf-8", errors="ignore"):
+        target, n = folder / f"{out.stem}-{n}{out.suffix}", n + 1
+    shutil.copyfile(out, target)
+    return target
+
+
+def find_desktop():
+    if not sys.platform.startswith("linux") or os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"):
+        return
+    run = pathlib.Path(os.environ.get("XDG_RUNTIME_DIR") or f"/run/user/{os.getuid()}")
+    wayland = sorted(run.glob("wayland-[0-9]"))
+    x11 = sorted(pathlib.Path("/tmp/.X11-unix").glob("X[0-9]"))
+    if wayland:
+        os.environ["WAYLAND_DISPLAY"] = wayland[0].name
+    elif x11:
+        os.environ["DISPLAY"] = ":" + x11[0].name[1:]
+    else:
+        return
+    os.environ.setdefault("XDG_RUNTIME_DIR", str(run))
+    if (run / "bus").exists():
+        os.environ.setdefault("DBUS_SESSION_BUS_ADDRESS", f"unix:path={run / 'bus'}")
+
+
+def open_in_browser(path):
+    find_desktop()
+    try:
+        browser = webbrowser.get()
+    except webbrowser.Error:
+        return False
+    if pathlib.Path(getattr(browser, "name", "")).name in CONSOLE_BROWSERS:
+        return False
+    return browser.open(path.as_uri())
 
 
 def main():
@@ -105,7 +146,10 @@ def main():
                     help="browser: built-in viewer, 25 MB budget; pupitre: Pupitre's own viewer, 2 MiB limit")
     ap.add_argument("--title", help="page title when the draft is a fragment without <html>")
     ap.add_argument("--allow-remote", action="store_true", help="keep media loaded from http(s) URLs")
-    ap.add_argument("--open", action="store_true", help="open the result in the default browser")
+    ap.add_argument("--copy-to", metavar="DIR",
+                    help="also copy the result into DIR (e.g. the user's Downloads); a rebuild of the same draft "
+                         "replaces its copy, any other file of that name is kept and the copy gets a -2 suffix")
+    ap.add_argument("--open", action="store_true", help="open the result, or its copy, in the default browser")
     a = ap.parse_args()
 
     draft = pathlib.Path(a.draft).expanduser().resolve()
@@ -125,7 +169,8 @@ def main():
     for match in LOCAL_LINK.finditer(text):
         problems.append(f"link to a local file will break once the report is shared: {match.group(2)}")
 
-    text = inject(ensure_document(text, a.title), a.target)
+    build_id = hashlib.sha1(str(draft).encode()).hexdigest()[:12]
+    text = inject(ensure_document(text, a.title), a.target, build_id)
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(text, encoding="utf-8")
 
@@ -135,13 +180,18 @@ def main():
     videos = len(re.findall(r"<video\b", text, re.I))
     summary = {"path": str(out), "bytes": size, "size": f"{size / 1048576:.2f} MiB", "target": a.target,
                "images": images, "videos": videos, "inlined": stats["inlined"], "warnings": problems}
-    print(json.dumps(summary, ensure_ascii=False))
     if size > budget:
+        print(json.dumps(summary, ensure_ascii=False))
         fail(f"{size / 1048576:.2f} MiB is over the {budget / 1048576:.0f} MiB budget for {a.target}: "
              "shorten or downscale the videos (scripts/to-mp4.sh <in> <out> 960 12), convert screenshots to WebP "
              "or JPEG, or crop them.", 2)
-    if a.open:
-        webbrowser.open(out.as_uri())
+    shown = out
+    if a.copy_to:
+        shown = deliver(out, pathlib.Path(a.copy_to).expanduser().resolve(), build_id)
+        summary["copy"] = str(shown)
+    print(json.dumps(summary, ensure_ascii=False))
+    if a.open and not open_in_browser(shown):
+        print("build.py: no graphical browser reachable from this shell; give the user the path instead", file=sys.stderr)
 
 
 if __name__ == "__main__":
