@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Profile form: the Save button now enables as soon as the form is valid</title>
+</head>
+<body>
+<main class="report">
+
+<header>
+  <p class="kicker">UI change · 2026-11-21</p>
+  <h1>Profile form: the Save button now enables as soon as the form is valid</h1>
+  <p class="lead">Fixed and checked in the running app. One decision left: whether to keep the inline error under the email field.</p>
+</header>
+
+<section class="verdict ok">
+  <h2>Verdict</h2>
+  <p>The button enables on the first valid keystroke instead of after a blur. Three flows checked, no regression on the empty form.</p>
+</section>
+
+<section>
+  <h2>Before and after</h2>
+  <figure class="pair">
+    <figure>
+      <video src="media/before.mp4" controls muted playsinline preload="metadata" title="Before · filling the profile form"></video>
+      <figcaption>Before</figcaption>
+    </figure>
+    <figure>
+      <video src="media/after.mp4" controls muted playsinline preload="metadata" title="After · filling the profile form"></video>
+      <figcaption>After</figcaption>
+    </figure>
+    <figcaption>Same flow, same data: watch the Save button at 0:04.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>Key screens</h2>
+  <div class="grid">
+    <figure><img src="media/valid.png" alt="Form filled, Save enabled"><figcaption>Valid form: Save is enabled.</figcaption></figure>
+    <figure><img src="media/invalid.png" alt="Invalid email, Save disabled"><figcaption>Invalid email: Save stays disabled, error under the field.</figcaption></figure>
+  </div>
+</section>
+
+<section>
+  <h2>What was checked</h2>
+  <table>
+    <tr><th>Check</th><th>Result</th></tr>
+    <tr><td>Valid form, Save enabled on the last keystroke</td><td class="ok">Pass</td></tr>
+    <tr><td>Empty form, Save disabled</td><td class="ok">Pass</td></tr>
+    <tr><td>Keyboard only (Tab, Enter)</td><td class="warn">Pass, focus ring faint</td></tr>
+  </table>
+</section>
+
+<section>
+  <h2>Decision</h2>
+  <table>
+    <tr><th>Option</th><th>Strength</th><th>Weakness</th><th>Confidence</th></tr>
+    <tr><td>Keep the inline error</td><td>Says what is wrong where it is</td><td>Shows while the user is still typing</td><td>7/10</td></tr>
+    <tr><td>Show it on blur only</td><td>Quieter while typing</td><td>Feedback comes later</td><td>5/10</td></tr>
+  </table>
+</section>
+
+<details>
+  <summary>Method and raw data</summary>
+  <p>Recorded at 1280 × 800, 15 fps, in an isolated browser; before on the main branch, after on the fix branch.</p>
+</details>
+
+</main>
+</body>
+</html>

@@ -22,6 +22,7 @@ npx skills add monkeycs60/agent-skills
 | [`generate-asset`](generate-asset/) | Generates a consistent batch of images (illustrations, icons, textures, logos) through Codex CLI, reviews them on a contact sheet and converts them to WebP. | Codex CLI signed in with a ChatGPT account. Pillow is installed on the fly by uv. |
 | [`devils-advocate`](devils-advocate/) | Skeptical co-founder that challenges an idea before it gets built: one question at a time, market evidence from Reddit and the web, then an honest verdict. | None (the agent's web search; a Reddit MCP server is optional). |
 | [`thinking-partner`](thinking-partner/) | Demanding Socratic partner to explore an idea and compare approaches before a decision. | None. |
+| [`visual-report`](visual-report/) | Builds a single-file HTML report (plan, audit, comparison, proof of a UI change) with embedded screenshots, before/after videos and its own click-to-zoom viewer that plays a before/after pair side by side; delivers it in Pupitre or the browser. | Python 3.10+. ffmpeg for videos; chrome-pilot or any browser tool for captures. |
 
 Every skill is written in English and tells the agent to answer, and to write its reports, in the language of your request.
 
@@ -29,17 +30,21 @@ Every skill is written in English and tells the agent to answer, and to write it
 
 Real runs on my computer, with my own data where a skill needs some.
 
-| [`deep-research`](deep-research/): 12 local speech-to-text engines compared from 29 dated sources in 12 minutes, contradictions settled at the primary source ([whole report](docs/deep-research-full.webp)) | [`chrome-pilot`](chrome-pilot/): an agent adds, ticks and filters todos in an isolated headless Chrome, filmed with `ab record`, pointer and clicks drawn in |
+| [`chrome-pilot`](chrome-pilot/): an agent adds, ticks and filters todos in an isolated headless Chrome, filmed with `ab record`, pointer and clicks drawn in | [`visual-report`](visual-report/): a before/after report of this README built from two takes on GitHub: one 1.7 MiB file whose viewer plays both videos side by side |
 |---|---|
-| <a href="docs/deep-research-full.webp"><img src="docs/deep-research.png" alt="deep-research report: question, verdict and comparison table of speech-to-text engines"></a> | <img src="docs/chrome-pilot.webp" alt="chrome-pilot proof video: an agent drives the TodoMVC demo"> |
+| <img src="docs/chrome-pilot.webp" alt="chrome-pilot proof video: an agent drives the TodoMVC demo"> | <img src="docs/visual-report.webp" alt="visual-report viewer: a before/after pair of videos playing side by side, then a pair of screenshots"> |
 
-| [`running-coach`](running-coach/): real output on 2.5 years of Strava and Garmin runs: the next workout 12 days before a marathon, and a long run whose last 5 km drifted out of Z2 | [`generate-asset`](generate-asset/): six potion icons with real transparency from Codex CLI in 10 minutes, reviewed on a contact sheet, 4.7 MB of PNG down to 438 KB of WebP |
+| [`deep-research`](deep-research/): 12 local speech-to-text engines compared from 29 dated sources in 12 minutes, contradictions settled at the primary source ([whole report](docs/deep-research-full.webp)) | [`running-coach`](running-coach/): real output on 2.5 years of Strava and Garmin runs: the next workout 12 days before a marathon, and a long run whose last 5 km drifted out of Z2 |
 |---|---|
-| <img src="docs/running-coach.png" alt="running-coach terminal output: training status, next workout and km splits of a long run"> | <img src="docs/generate-asset.png" alt="generate-asset contact sheet of six generated potion icons and their WebP conversions"> |
+| <a href="docs/deep-research-full.webp"><img src="docs/deep-research.png" alt="deep-research report: question, verdict and comparison table of speech-to-text engines"></a> | <img src="docs/running-coach.png" alt="running-coach terminal output: training status, next workout and km splits of a long run"> |
 
-| [`devils-advocate`](devils-advocate/): a real Claude Code session: one challenge per message, then 5 web searches and a verdict with red flags, unknowns, strengths and a pivot | [`thinking-partner`](thinking-partner/): a real Claude Code session: one question per reply, then frank pushback on a big-bang rewrite with the time budget worked out |
+| [`generate-asset`](generate-asset/): six potion icons with real transparency from Codex CLI in 10 minutes, reviewed on a contact sheet, 4.7 MB of PNG down to 438 KB of WebP | [`devils-advocate`](devils-advocate/): a real Claude Code session: one challenge per message, then 5 web searches and a verdict with red flags, unknowns, strengths and a pivot |
 |---|---|
-| <img src="docs/devils-advocate.png" alt="devils-advocate session transcript challenging a browser extension idea"> | <img src="docs/thinking-partner.png" alt="thinking-partner session transcript about rewriting a backend from Node to Go"> |
+| <img src="docs/generate-asset.png" alt="generate-asset contact sheet of six generated potion icons and their WebP conversions"> | <img src="docs/devils-advocate.png" alt="devils-advocate session transcript challenging a browser extension idea"> |
+
+[`thinking-partner`](thinking-partner/): a real Claude Code session: one question per reply, then frank pushback on a big-bang rewrite with the time budget worked out
+
+<img src="docs/thinking-partner.png" width="49%" alt="thinking-partner session transcript about rewriting a backend from Node to Go">
 
 ## Install
 

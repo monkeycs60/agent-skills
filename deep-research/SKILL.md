@@ -23,7 +23,7 @@ Set and state in the document:
 - **What would make the answer wrong.** Check that first.
 
 ### 2. Start the contrarian in the background
-On a substantive question, start a Parallel Task run **before** searching yourself, and keep working while it runs. Processor: `base` for a fact, `core` for a comparison, `pro` for a market study; never higher without the user's approval. Call and polling: [references/engines.md](references/engines.md).
+On a substantive question, start a Parallel Task run **before** searching yourself, and keep working while it runs. Processor: `base` for a fact, `core` for a comparison, `pro` for a market study; never higher without the user's approval. Call and polling: [references/engines.md](references/engines.md). A run refused for lack of credit (HTTP 402, `insufficient credit`) is not retried and not replaced by another paid API: go on with tiers 0 to 2, where the `parallel-search` MCP stays free, and say in the method note that the contrarian run was skipped.
 
 ### 3. Do your own pass, crossing engines
 Never depend on a single engine: each one sees a different web. No engine is gated behind a threshold; cross them as soon as the topic deserves it.
