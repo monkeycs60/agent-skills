@@ -3,87 +3,89 @@ name: deep-research
 description: "Multi-engine web research (Parallel, Exa, Tavily, Firecrawl) with dated sources checked against primary sources, delivered as a standalone HTML report. Use for a study, a comparison, a state of the art, a tool or company review, or a \"what is the best X\" question."
 ---
 
-# Recherche intensive
+# Deep research
 
-Produire une étude sourcée et datée sur un sujet mouvant, en évitant les deux pièges qui ruinent une recherche web : le contenu périmé republié comme neuf, et le marketing déguisé en comparatif. Le livrable est un document HTML autonome dans `~/Downloads`, pas une réponse de chat.
+Produce a sourced, dated study on a fast-moving topic while avoiding the two traps that ruin web research: stale content republished as new, and marketing dressed up as a comparison. The deliverable is a standalone HTML document in `~/Downloads`, not a chat answer.
 
-## Avant de commencer
-- Clés `$PARALLEL_API_KEY`, `$EXA_API_KEY`, `$FIRECRAWL_API_KEY`, `$TAVILY_API_KEY` : dans l'environnement (par exemple un fichier `keys.env` chargé par le profil du shell). Jamais de clé en dur dans un script.
-- Serveurs MCP : `parallel-search`, `parallel-task`, `exa`, `tavily`, `reddit-mcp-buddy`, Context7. CLI `firecrawl` en shell.
-- Budget : de l'ordre de 0,10 $ par étude. Au-delà de **0,75 $**, s'arrêter et demander à l'utilisateur en disant ce qui est dépensé et ce que coûterait la suite. Ce seuil ne vise que le palier 3 (Parallel Task, Responses).
+Answer the user, and write every report or deliverable, in the language of the user's request, whatever the language of this skill's files.
 
-## Le protocole en cinq temps
+## Before you start
+- Keys `$PARALLEL_API_KEY`, `$EXA_API_KEY`, `$FIRECRAWL_API_KEY`, `$TAVILY_API_KEY`: in the environment (for example a `keys.env` file loaded by the shell profile). Never hard-code a key in a script.
+- MCP servers: `parallel-search`, `parallel-task`, `exa`, `tavily`, `reddit-mcp-buddy`, Context7. `firecrawl` CLI in the shell.
+- Budget: around $0.10 per study. Above **$0.75**, stop and ask the user, stating what has been spent and what the rest would cost. This threshold only covers tier 3 (Parallel Task, Responses).
 
-### 1. Cadrer avant de chercher
-Fixer et annoncer dans le document :
-- **La fenêtre temporelle.** Par défaut rien de plus vieux que 3 mois ; 6 semaines sur un sujet rapide (modèles, pricing, outils IA) ; jusqu'à un an sur un sujet stable (méthodo, droit, science).
-- **La question de décision.** Ce que l'utilisateur fera du résultat. Sans décision derrière, on produit un catalogue.
-- **Ce qui rendrait la réponse fausse.** Le vérifier en priorité.
+## The five-step protocol
 
-### 2. Lancer le contradicteur en tâche de fond
-Sur une question de fond, lancer un run Parallel Task **avant** de chercher soi-même, et travailler pendant qu'il tourne. Processeur : `base` pour un fait, `core` pour un comparatif, `pro` pour une étude de marché ; jamais au-dessus sans accord de l'utilisateur. Appel et polling : [references/moteurs.md](references/moteurs.md).
+### 1. Frame before searching
+Set and state in the document:
+- **The time window.** By default nothing older than 3 months; 6 weeks on a fast topic (models, pricing, AI tools); up to a year on a stable topic (methodology, law, science).
+- **The decision question.** What the user will do with the result. Without a decision behind it, you produce a catalogue.
+- **What would make the answer wrong.** Check that first.
 
-### 3. Faire sa propre passe en croisant les moteurs
-Ne jamais dépendre d'un seul moteur : chacun voit un web différent. Aucun moteur n'est conditionné à un seuil ; croiser dès que le sujet le mérite.
+### 2. Start the contrarian in the background
+On a substantive question, start a Parallel Task run **before** searching yourself, and keep working while it runs. Processor: `base` for a fact, `core` for a comparison, `pro` for a market study; never higher without the user's approval. Call and polling: [references/engines.md](references/engines.md).
 
-| Palier | Outils | Quand |
+### 3. Do your own pass, crossing engines
+Never depend on a single engine: each one sees a different web. No engine is gated behind a threshold; cross them as soon as the topic deserves it.
+
+| Tier | Tools | When |
 |---|---|---|
-| 0, gratuit | Context7, `reddit-mcp-buddy`, `WebFetch`, `WebSearch` | d'abord ; une question de doc technique s'arrête souvent là |
-| 1, moteurs | **Parallel Search** (référence, par lui qu'on commence), Exa, Tavily, `firecrawl search` | selon ce que le sujet demande |
-| 2, lecture lourde | `firecrawl crawl` / `map`, Parallel Extract | site ou doc entière, lot d'URL connues |
-| 3, payant à l'unité | Parallel Task, Responses | le contradicteur ; seul poste qui pèse sur le budget |
+| 0, free | Context7, `reddit-mcp-buddy`, `WebFetch`, `WebSearch` | first; a technical docs question often stops here |
+| 1, engines | **Parallel Search** (the reference, start with it), Exa, Tavily, `firecrawl search` | as the topic requires |
+| 2, heavy reading | `firecrawl crawl` / `map`, Parallel Extract | a whole site or doc, a batch of known URLs |
+| 3, pay per call | Parallel Task, Responses | the contrarian; the only line that weighs on the budget |
 
-Toujours au moins une passe Parallel restreinte à `reddit.com` et `news.ycombinator.com` : c'est là qu'est le signal d'usage réel. Écarter ce qui sort de la fenêtre temporelle, et dire quand une source clé est trop vieille.
+Always run at least one Parallel pass restricted to `reddit.com` and `news.ycombinator.com`: that is where real usage signal lives. Drop what falls outside the time window, and say when a key source is too old.
 
-Ces signaux appellent un moteur de plus :
-1. Moins de quatre sources distinctes dans la fenêtre temporelle.
-2. Tous les résultats convergent vers le même article ou se citent en boucle (signature SEO).
-3. Une contradiction reste non tranchée après lecture des sources primaires.
-4. Sujet de niche, non anglophone, ou daté à l'heure près.
+These signals call for one more engine:
+1. Fewer than four distinct sources within the time window.
+2. All results converge on the same article or cite each other in a loop (SEO signature).
+3. A contradiction remains unresolved after reading the primary sources.
+4. Niche topic, non-English, or dated to the hour.
 
-Un désaccord entre deux moteurs est une information, pas un problème.
+A disagreement between two engines is information, not a problem.
 
-### 4. Arbitrer les désaccords à la source primaire
-L'étape qui fait la valeur du livrable, et celle qu'on est tenté de sauter. Quand le rapport délégué et la passe manuelle divergent, ni l'un ni l'autre n'a raison par défaut : lire la page officielle.
+### 4. Settle disagreements at the primary source
+The step that gives the deliverable its value, and the one you are tempted to skip. When the delegated report and the manual pass diverge, neither is right by default: read the official page.
 
-Hiérarchie des sources :
-1. Page de pricing, changelog, annonce officielle du fournisseur
-2. Benchmark indépendant et reproductible, méthodologie publiée
-3. Documentation technique
-4. Retour d'usage communautaire daté
-5. (en dessous, rien qui puisse porter un chiffre)
-6. Article de comparaison, billet de blog, agrégateur
+Source hierarchy:
+1. Vendor pricing page, changelog, official announcement
+2. Independent, reproducible benchmark with published methodology
+3. Technical documentation
+4. Dated community usage report
+5. (below this, nothing that can carry a number)
+6. Comparison article, blog post, aggregator
 
-**Aucun chiffre du document ne vient du niveau 6** : un chiffre sans source primaire datée reste hors du document.
+**No number in the document comes from level 6**: a number without a dated primary source stays out of the document.
 
-### 5. Écrire le document
-HTML autonome dans `/tmp` (CSS et JS inclus), copié dans `~/Downloads/` et ouvert dans Chrome. Structure :
-1. **Verdict** : la recommandation en un paragraphe, avant toute donnée
-2. **Ce qui a bougé** : les faits datés qui invalident les réponses d'hier
-3. **Les données** : tableaux comparatifs, une ligne de lecture par ligne
-4. **Recommandations par cas d'usage**, dont une ligne pour le cas de l'utilisateur
-5. **Signal terrain** : citations Reddit et HN, avec leur limite
-6. **Fiabilité** : contradictions rencontrées, tranchées ou non, durée de vie du document
-7. **Sources** : primaires, datées, avec ce qui a servi à quoi
+### 5. Write the document
+Standalone HTML in `/tmp` (CSS and JS inline), copied to `~/Downloads/` and opened in Chrome. Structure:
+1. **Verdict**: the recommendation in one paragraph, before any data
+2. **What changed**: the dated facts that invalidate yesterday's answers
+3. **The data**: comparison tables, one reading line per row
+4. **Recommendations by use case**, including one line for the user's case
+5. **Field signal**: Reddit and HN quotes, with their limits
+6. **Reliability**: contradictions met, settled or not, the document's shelf life
+7. **Sources**: primary, dated, with what each one was used for
 
-## Règles non négociables
-- **Jamais une seule source.** Au minimum : le moteur principal, une passe Reddit et HN, et la page officielle pour chaque chiffre.
-- **Ne jamais rogner sur les moteurs ou les requêtes pour économiser** : à volume normal, les paliers 0 à 2 restent dans les quotas gratuits ; c'est le résultat qu'on abîme, pas la facture.
-- **Signaler le marketing.** Blog d'un acteur premier de son propre comparatif, SEO généré qui place un inconnu en tête : le nommer dans le document plutôt que l'ignorer.
-- **Dater la durée de vie** du document et dire ce qu'il faudra revérifier.
-- **Ne jamais lisser une contradiction.** Non tranchée, elle s'écrit telle quelle ; jamais de moyenne inventée.
-- **Reconnaître ses erreurs.** Quand le rapport délégué corrige la passe manuelle, le dire et corriger le document.
-- **Wording** : jamais de tiret cadratin ni de point-virgule dans le texte du livrable. Tables pour tout ce qui est comparable. Bloc `TODO` en fin de réponse.
-- Coût réel de l'étude en fin de réponse si l'utilisateur le demande, en ne comptant que les appels facturés.
+## Non-negotiable rules
+- **Never a single source.** At minimum: the main engine, a Reddit and HN pass, and the official page for every number.
+- **Never cut engines or queries to save money**: at normal volume, tiers 0 to 2 stay within free quotas; cutting damages the result, not the bill.
+- **Call out marketing.** A vendor's blog ranking itself first in its own comparison, generated SEO putting an unknown on top: name it in the document instead of ignoring it.
+- **Date the document's shelf life** and say what will need rechecking.
+- **Never smooth over a contradiction.** Unresolved, it is written as is; never an invented average.
+- **Own your mistakes.** When the delegated report corrects the manual pass, say so and fix the document.
+- **Wording**: never an em dash or a semicolon in the deliverable's text. Tables for everything comparable. `TODO` block at the end of the reply.
+- Real cost of the study at the end of the reply if the user asks, counting only billed calls.
 
-## Claude Code et Codex
-Ce fichier est le protocole canonique, partagé entre Claude Code et Codex : un prompt Codex `/recherche-intensive` peut simplement renvoyer ici. Toute modification du protocole se fait ici.
+## Claude Code and Codex
+This file is the canonical protocol, shared between Claude Code and Codex: a Codex prompt `/recherche-intensive` can simply point here. Any change to the protocol is made here.
 
 | | Claude Code | Codex |
 |---|---|---|
-| Serveurs MCP | dans `~/.claude.json` | les mêmes dans `~/.codex/config.toml`, via `bearer_token_env_var` |
-| Doc de librairie | Context7 | pas de Context7 : `openaiDeveloperDocs` pour OpenAI, sinon doc officielle en direct |
-| Moteur en plus | | MCP `brave-search` |
+| MCP servers | in `~/.claude.json` | the same ones in `~/.codex/config.toml`, via `bearer_token_env_var` |
+| Library docs | Context7 | no Context7: `openaiDeveloperDocs` for OpenAI, otherwise official docs directly |
+| Extra engine | | MCP `brave-search` |
 
-## Références (à lire seulement si l'étape l'exige)
-- [references/moteurs.md](references/moteurs.md) (`~/.claude/skills/deep-research/references/moteurs.md`) : appels `curl` Parallel, Exa et Task, pièges d'API, force de chaque moteur, flags Firecrawl et chemin du CLI, quotas gratuits, tarifs Parallel, rotation des clés. À lire avant le premier appel d'API ou pour chiffrer un coût.
+## References (read only when the step requires it)
+- [references/engines.md](references/engines.md) (`~/.claude/skills/deep-research/references/engines.md`): Parallel, Exa and Task `curl` calls, API pitfalls, each engine's strength, Firecrawl flags and CLI path, free quotas, Parallel pricing, key rotation. Read before the first API call or to estimate a cost.

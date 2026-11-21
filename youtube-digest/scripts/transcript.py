@@ -35,6 +35,18 @@ CODE = (
     "github.com", "gitlab.com", "codeberg.org", "bitbucket.org", "huggingface.co", "npmjs.com",
     "pypi.org", "colab.research.google.com", "stackblitz.com", "codesandbox.io", "replit.com",
 )
+LABELS = {
+    "en": {"channel": "Channel", "published": "Published", "duration": "Duration", "link": "Link", "text": "Text",
+           "sep": ": ", "links": "Useful links", "code": "Code", "page": "Page", "description": "Description",
+           "transcript": "Transcript", "comments": "Top comments", "likes": "likes", "pinned": "pinned",
+           "uploader": "uploader", "auto": "YouTube auto-captions ({key})", "manual": "manual captions ({key})",
+           "local": "local transcription, Parakeet TDT 0.6B v3"},
+    "fr": {"channel": "Chaîne", "published": "Publiée", "duration": "Durée", "link": "Lien", "text": "Texte",
+           "sep": " : ", "links": "Liens utiles", "code": "Code", "page": "Page", "description": "Description",
+           "transcript": "Transcription", "comments": "Commentaires les plus appréciés", "likes": "j'aime",
+           "pinned": "épinglé", "uploader": "auteur", "auto": "sous-titres automatiques YouTube ({key})",
+           "manual": "sous-titres manuels ({key})", "local": "transcription locale Parakeet TDT 0.6B v3"},
+}
 
 
 class Blocked(Exception):
@@ -77,19 +89,24 @@ def get_json(url, timeout=30):
 
 def pick_track(info):
     lang = (info.get("language") or "").split("-")[0]
+    if not lang:
+        audio = max((f for f in info.get("formats") or [] if f.get("language")),
+                    key=lambda f: f.get("language_preference") or -1, default={})
+        lang = (audio.get("language") or "").split("-")[0]
     manual = {k: v for k, v in (info.get("subtitles") or {}).items() if k != "live_chat"}
     auto = info.get("automatic_captions") or {}
-    orig = next((k for k in auto if k.endswith("-orig")), None)
+    origs = [k for k in auto if k.endswith("-orig")]
+    orig = next((k for k in origs if k.split("-")[0] == lang), origs[0] if origs else None)
     if not lang and orig:
         lang = orig.split("-")[0]
     order = []
     for wanted in (lang, "orig", "en", "fr", "*"):
         if wanted == "orig":
-            order += [("automatiques YouTube", auto, orig)] if orig else []
+            order += [("auto", auto, orig)] if orig else []
         elif wanted:
-            order += [("manuels", manual, k) for k in manual if wanted == "*" or k.split("-")[0] == wanted]
+            order += [("manual", manual, k) for k in manual if wanted == "*" or k.split("-")[0] == wanted]
     if lang and lang in auto:
-        order.append(("automatiques YouTube", auto, lang))
+        order.append(("auto", auto, lang))
     for kind, table, key in order:
         url = next((f["url"] for f in table[key] if f.get("ext") == "json3"), None)
         if url:
@@ -109,7 +126,7 @@ def fetch_captions(url):
 def ensure_venv():
     if VENV_PY.exists():
         return
-    log("Installation du moteur local (une seule fois)…")
+    log("Installing the local engine (one time only)…")
     if shutil.which("uv"):
         subprocess.run(["uv", "venv", "-q", str(VENV)], check=True)
         subprocess.run(["uv", "pip", "install", "-q", "--python", str(VENV_PY), "onnx-asr[cpu,hub]"], check=True)
@@ -125,29 +142,29 @@ def transcribe_audio(info_path, workdir, cookies):
                "-o", str(workdir / "audio.%(ext)s")], cookies)
     audio = next(workdir.glob("audio.*"), None)
     if r.returncode or not audio:
-        sys.exit(f"Téléchargement de l'audio impossible :\n{r.stderr[-800:]}")
+        sys.exit(f"Could not download the audio:\n{r.stderr[-800:]}")
     wav = workdir / "audio16k.wav"
     subprocess.run(["ffmpeg", "-loglevel", "error", "-y", "-i", str(audio), "-ar", "16000", "-ac", "1",
                     "-c:a", "pcm_s16le", str(wav)], check=True)
     audio.unlink()
-    log(f"Audio prêt en {time.time() - t:.0f} s, transcription Parakeet…")
+    log(f"Audio ready in {time.time() - t:.0f} s, transcribing with Parakeet…")
     r = subprocess.run([str(VENV_PY), "-I", str(SKILL / "scripts" / "asr.py"), str(wav)],
                        stdout=subprocess.PIPE, text=True)
     wav.unlink()
     if r.returncode:
-        sys.exit("La transcription locale a échoué (voir les messages au-dessus).")
+        sys.exit("Local transcription failed (see the messages above).")
     return [(seg["start"], seg["text"]) for seg in map(json.loads, r.stdout.splitlines()) if seg["text"]]
 
 
 def via_ytdlp(url, args):
     if not shutil.which("yt-dlp"):
-        raise Blocked("yt-dlp absent")
+        raise Blocked("yt-dlp missing")
     r = ytdlp(["-J", "--write-comments", "--extractor-args",
                f"youtube:max_comments={COMMENTS},{COMMENTS},0,0;comment_sort=top", url], args.cookies)
     if r.returncode:
         if any(b in r.stderr for b in BLOCKED):
             raise Blocked(r.stderr.strip().splitlines()[-1])
-        sys.exit(f"yt-dlp n'a pas pu lire la vidéo :\n{r.stderr[-800:]}")
+        sys.exit(f"yt-dlp could not read the video:\n{r.stderr[-800:]}")
     raw = json.loads(r.stdout)
     date = raw.get("upload_date") or ""
     info = {
@@ -167,22 +184,22 @@ def via_ytdlp(url, args):
         kind, key, cap_url = track
         for attempt in range(2):
             try:
-                return info, fetch_captions(cap_url), f"sous-titres {kind} ({key})"
+                return info, fetch_captions(cap_url), LABELS[args.lang][kind].format(key=key)
             except Exception as e:
-                log(f"Sous-titres illisibles ({e})" + (", nouvel essai dans 3 s." if attempt == 0 else "."))
+                log(f"Unreadable captions ({e})" + (", retrying in 3 s." if attempt == 0 else "."))
                 time.sleep(3 if attempt == 0 else 0)
     if args.no_asr:
-        log("Pas de sous-titres exploitables, vidéo ignorée (--no-asr).")
+        log("No usable captions, video skipped (--no-asr).")
         sys.exit(3)
     if info["language"] and info["language"] not in PARAKEET_LANGS:
-        log(f"Attention : langue « {info['language']} » hors des 25 langues de Parakeet, texte peu fiable.")
+        log(f"Warning: language \"{info['language']}\" is not one of Parakeet's 25 languages, the text is unreliable.")
     info_path = workdir / "info.full.json"
     info_path.write_text(r.stdout)
     try:
         cues = transcribe_audio(info_path, workdir, args.cookies)
     finally:
         info_path.unlink(missing_ok=True)
-    return info, cues, "transcription locale Parakeet TDT 0.6B v3"
+    return info, cues, LABELS[args.lang]["local"]
 
 
 def find_urls(text):
@@ -235,28 +252,36 @@ def paragraphs(cues, chapters):
     return out
 
 
-def render(info, source, blocks, links):
+def meta_line(L, channel, date, duration):
+    sep = L["sep"]
+    return f"{L['channel']}{sep}{channel} · {L['published']}{sep}{date} · {L['duration']}{sep}{duration}"
+
+
+def render(info, source, blocks, links, lang):
     vid = info["id"]
+    L = LABELS[lang]
+    sep = L["sep"]
     link = lambda s: f"[{clock(s)}](https://youtu.be/{vid}?t={int(s)})"
     lines = [
         f"# {info['title'] or vid}",
         "",
-        f"- Chaîne : {info['channel'] or '?'} · Publiée : {info['date']} · Durée : {clock(info['duration'])}",
-        f"- Lien : https://youtu.be/{vid}",
-        f"- Texte : {source}",
+        f"- {meta_line(L, info['channel'] or '?', info['date'], clock(info['duration']))}",
+        f"- {L['link']}{sep}https://youtu.be/{vid}",
+        f"- {L['text']}{sep}{source}",
         "",
     ]
     if links["code"] or links["pages"]:
-        lines += ["## Liens utiles", ""]
-        lines += [f"- Code : {u}" for u in links["code"]] + [f"- Page : {u}" for u in links["pages"]] + [""]
-    lines += ["## Description", "", info["description"].strip()[:4000], "", "## Transcription", ""]
+        lines += [f"## {L['links']}", ""]
+        lines += [f"- {L['code']}{sep}{u}" for u in links["code"]] + [f"- {L['page']}{sep}{u}" for u in links["pages"]] + [""]
+    lines += [f"## {L['description']}", "", info["description"].strip()[:4000], "", f"## {L['transcript']}", ""]
     for kind, start, text in blocks:
         lines += [f"### {link(start)} {text}", ""] if kind == "h" else [f"**{link(start)}** {text}", ""]
     if info["comments"]:
-        lines += [f"## Commentaires les plus appréciés ({len(info['comments'])})", ""]
+        lines += [f"## {L['comments']} ({len(info['comments'])})", ""]
         for c in info["comments"]:
-            tags = [f"{c['likes']} j'aime"] + (["épinglé"] if c["pinned"] else []) + (["auteur"] if c["uploader"] else [])
-            lines.append(f"- **{c['author'] or '?'}** ({', '.join(tags)}) : {one_line(c['text'])}")
+            tags = ([f"{c['likes']} {L['likes']}"] + ([L["pinned"]] if c["pinned"] else [])
+                    + ([L["uploader"]] if c["uploader"] else []))
+            lines.append(f"- **{c['author'] or '?'}** ({', '.join(tags)}){sep}{one_line(c['text'])}")
         lines.append("")
     return "\n".join(lines)
 
@@ -264,10 +289,11 @@ def render(info, source, blocks, links):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("url")
-    ap.add_argument("--asr", action="store_true", help="ignorer les sous-titres et transcrire l'audio")
-    ap.add_argument("--no-asr", action="store_true", help="s'arrêter (code 3) plutôt que transcrire l'audio")
-    ap.add_argument("--cookies", action="store_true", help="utiliser les cookies YouTube de Chrome")
-    ap.add_argument("--force", action="store_true", help="refaire même si déjà en cache")
+    ap.add_argument("--asr", action="store_true", help="ignore captions and transcribe the audio")
+    ap.add_argument("--no-asr", action="store_true", help="stop (exit code 3) instead of transcribing the audio")
+    ap.add_argument("--cookies", action="store_true", help="use Chrome's YouTube cookies")
+    ap.add_argument("--force", action="store_true", help="redo even if already cached")
+    ap.add_argument("--lang", choices=sorted(LABELS), default="en", help="language of the transcript.md labels")
     a = ap.parse_args()
     t0 = time.time()
 
@@ -281,13 +307,13 @@ def main():
     try:
         info, cues, source = via_ytdlp(a.url, a)
     except Blocked as why:
-        sys.exit(f"YouTube refuse cette machine ({why}) : lancer le skill depuis le PC, ou avec --cookies.")
+        sys.exit(f"YouTube refuses this machine ({why}): run the skill from a personal computer, or with --cookies.")
 
     workdir = DATA / info["id"]
     workdir.mkdir(parents=True, exist_ok=True)
     links = useful_links(info)
     (workdir / "transcript.md").write_text(
-        render(info, source, paragraphs(cues, info["chapters"]), links), encoding="utf-8")
+        render(info, source, paragraphs(cues, info["chapters"]), links, a.lang), encoding="utf-8")
     meta = {
         "id": info["id"], "title": info["title"], "duration": info["duration"], "source": source,
         "words": sum(len(t.split()) for _, t in cues), "chapters": len(info["chapters"]),

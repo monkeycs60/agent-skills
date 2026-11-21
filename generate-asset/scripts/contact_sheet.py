@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Usage: contact_sheet.py <dossier> <sortie.jpg> [taille_vignette]
-Assemble toutes les images du dossier en planche contact (6 par ligne, nom sous chaque vignette)."""
+"""Usage: contact_sheet.py <folder> <output.jpg> [thumbnail_size]
+Assembles every image in the folder into a contact sheet (6 per row, name under each thumbnail)."""
 import glob, os, shutil, sys
 try:
     from PIL import Image, ImageDraw
@@ -12,11 +12,11 @@ except ImportError:
             os.execv(venv_python, [venv_python, *sys.argv])
         if shutil.which("uv"):
             os.execvp("uv", ["uv", "run", "-q", "--no-project", "--with", "pillow", "python", *sys.argv])
-    sys.exit("Pillow manquant : lancer bash " + os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/install.sh")
+    sys.exit("Pillow missing: run bash " + os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/install.sh")
 src, out = sys.argv[1], sys.argv[2]
 size = int(sys.argv[3]) if len(sys.argv) > 3 else 220
 files = sorted(f for f in glob.glob(os.path.join(src, '*')) if f.lower().endswith(('.png', '.webp', '.jpg', '.jpeg')))
-if not files: sys.exit('aucune image')
+if not files: sys.exit('no images found')
 cols = min(6, len(files)); rows = (len(files) + cols - 1) // cols
 sheet = Image.new('RGB', (cols * size, rows * (size + 18)), (12, 14, 20))
 draw = ImageDraw.Draw(sheet)

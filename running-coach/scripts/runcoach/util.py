@@ -10,6 +10,7 @@ from typing import Any
 
 DAY_KEYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"]
 DAY_FR = ["lun", "mar", "mer", "jeu", "ven", "sam", "dim"]
+DAY_ABBR = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 _DAY_ALIASES = {
     **{k: i for i, k in enumerate(DAY_KEYS)},
     **{k: i for i, k in enumerate(DAY_FR)},
@@ -54,7 +55,7 @@ def read_json(path: Path, default: Any = None) -> Any:
     except FileNotFoundError:
         return default
     except json.JSONDecodeError as e:
-        raise CoachError(f"{path} n'est pas un JSON valide ({e})") from e
+        raise CoachError(f"{path} is not valid JSON ({e})") from e
 
 
 def write_text(path: Path, text: str, private: bool = False) -> None:
@@ -85,7 +86,7 @@ def parse_pace(value: Any) -> float | None:
         return float(value)
     m = re.fullmatch(r"\s*(\d+):(\d{1,2})(?:\s*/\s*km)?\s*", str(value))
     if not m:
-        raise CoachError(f"allure invalide : {value!r} (attendu m:ss, par exemple 5:10)")
+        raise CoachError(f"invalid pace: {value!r} (expected m:ss, e.g. 5:10)")
     return int(m.group(1)) * 60 + int(m.group(2))
 
 
@@ -94,7 +95,7 @@ def parse_duration(value: Any) -> float:
         return float(value)
     parts = str(value).strip().split(":")
     if not all(p.isdigit() for p in parts) or not 1 <= len(parts) <= 3:
-        raise CoachError(f"durée invalide : {value!r} (attendu h:mm:ss, mm:ss ou secondes)")
+        raise CoachError(f"invalid duration: {value!r} (expected h:mm:ss, mm:ss or seconds)")
     total = 0
     for p in parts:
         total = total * 60 + int(p)
@@ -150,7 +151,7 @@ def parse_date(value: str) -> date:
     try:
         return date.fromisoformat(value)
     except ValueError as e:
-        raise CoachError(f"date invalide : {value!r} (attendu AAAA-MM-JJ)") from e
+        raise CoachError(f"invalid date: {value!r} (expected YYYY-MM-DD)") from e
 
 
 def week_of(d: date) -> tuple[int, int]:
@@ -165,7 +166,7 @@ def week_label(year: int, week: int) -> str:
 def parse_week(label: str) -> tuple[int, int]:
     m = re.fullmatch(r"(\d{4})-?W(\d{1,2})", label.strip(), re.IGNORECASE)
     if not m:
-        raise CoachError(f"semaine invalide : {label!r} (attendu AAAA-Wnn)")
+        raise CoachError(f"invalid week: {label!r} (expected YYYY-Wnn)")
     year, week = int(m.group(1)), int(m.group(2))
     monday_of(year, week)
     return year, week
@@ -175,18 +176,18 @@ def monday_of(year: int, week: int) -> date:
     try:
         return date.fromisocalendar(year, week, 1)
     except ValueError as e:
-        raise CoachError(f"semaine inexistante : {year}-W{week}") from e
+        raise CoachError(f"no such week: {year}-W{week}") from e
 
 
 def parse_day(value: str) -> int:
     key = str(value).strip().lower()
     if key not in _DAY_ALIASES:
-        raise CoachError(f"jour invalide : {value!r} (attendu mon…sun ou lun…dim)")
+        raise CoachError(f"invalid day: {value!r} (expected mon…sun)")
     return _DAY_ALIASES[key]
 
 
-def day_fr(d: date) -> str:
-    return DAY_FR[d.weekday()]
+def day_abbr(d: date) -> str:
+    return DAY_ABBR[d.weekday()]
 
 
 def daterange(start: date, end: date):

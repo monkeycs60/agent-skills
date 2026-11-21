@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Usage: to_webp.py <dossier_png> <dossier_sortie> [taille=768] [qualite=80]
-Recadre au carré (centre), redimensionne et écrit <id>.webp pour chaque PNG. Écrase les fichiers existants."""
+"""Usage: to_webp.py <png_folder> <output_folder> [size=768] [quality=80]
+Crops to a centered square, resizes and writes <id>.webp for each PNG. Overwrites existing files."""
 import glob, os, shutil, sys
 try:
     from PIL import Image, ImageOps
@@ -12,7 +12,7 @@ except ImportError:
             os.execv(venv_python, [venv_python, *sys.argv])
         if shutil.which("uv"):
             os.execvp("uv", ["uv", "run", "-q", "--no-project", "--with", "pillow", "python", *sys.argv])
-    sys.exit("Pillow manquant : lancer bash " + os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/install.sh")
+    sys.exit("Pillow missing: run bash " + os.path.dirname(os.path.dirname(os.path.abspath(__file__))) + "/install.sh")
 src, out = sys.argv[1], sys.argv[2]
 size = int(sys.argv[3]) if len(sys.argv) > 3 else 768
 quality = int(sys.argv[4]) if len(sys.argv) > 4 else 80

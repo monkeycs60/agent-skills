@@ -20,5 +20,5 @@ for seg in model.recognize(audio, sample_rate=16000):
                      ensure_ascii=False), flush=True)
     if seg.end - last >= 300:
         last = seg.end
-        print(f"  {seg.end / 60:.0f}/{total / 60:.0f} min ({seg.end / (time.time() - t):.0f}× temps réel)",
+        print(f"  {seg.end / 60:.0f}/{total / 60:.0f} min ({seg.end / (time.time() - t):.0f}× real time)",
               file=sys.stderr, flush=True)

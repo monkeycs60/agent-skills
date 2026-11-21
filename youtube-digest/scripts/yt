@@ -5,7 +5,7 @@ export PATH="$HOME/.local/bin:$PATH"
 command="${1:-}"
 case "$command" in
   transcript|report|playlist|ask|links) shift ;;
-  *) echo "usage : yt transcript|report|playlist|ask|links …" >&2; exit 2 ;;
+  *) echo "usage: yt transcript|report|playlist|ask|links …" >&2; exit 2 ;;
 esac
 for candidate in "${YOUTUBE_SKILL_PYTHON:-}" python3.14 python3.13 python3.12 python3.11 python3.10 python3; do
   [ -n "$candidate" ] && command -v "$candidate" >/dev/null 2>&1 || continue
@@ -16,5 +16,5 @@ done
 if command -v uv >/dev/null 2>&1; then
   exec uv run -q --no-project --python 3.12 python -I "$here/$command.py" "$@"
 fi
-echo "Python 3.10 ou plus récent introuvable : lancer install.sh, ou installer uv puis « uv python install 3.12 »." >&2
+echo "Python 3.10 or newer not found: run install.sh, or install uv then run \"uv python install 3.12\"." >&2
 exit 1

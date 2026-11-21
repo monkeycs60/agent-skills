@@ -1,62 +1,61 @@
-# Capturer l'écran réel de l'app
+# Capturing the app's real screen
 
-`node $S/capturer.js recette.json` ouvre une page dans un navigateur sans interface, la prépare,
-la photographie (PNG, `dsf` fois la taille du viewport) et écrit à côté un JSON : cadre des éléments
-choisis (`boites`) et styles calculés d'éléments témoins (`styles`, pour remplir `charte.css`).
+`node $S/capture.js recipe.json` opens a page in a headless browser, prepares it, photographs it
+(PNG, `dsf` times the viewport size) and writes a JSON next to it: frames of the chosen elements
+(`boxes`) and computed styles of sample elements (`styles`, to fill in `brand.css`).
 
-**Données fictives uniquement** : serveur local, démo ou préproduction, jamais un compte réel.
+**Fictional data only**: local server, demo or staging, never a real account.
 
-## Recette
+## Recipe
 
-Seuls `url` et `sortie` sont obligatoires. Un chemin relatif (`url` local, `sortie`) se lit depuis
-le dossier de la recette.
+Only `url` and `output` are required. A relative path (local `url`, `output`) is read from the
+recipe's folder.
 
 ```json
 {
   "url": "http://localhost:5173/login",
-  "viewport": [1440, 900], "dsf": 2, "lang": "fr-FR", "theme": "light",
-  "sortie": "assets/ecran-reel-fr.png",
-  "attente": 1500,
+  "viewport": [1440, 900], "dsf": 2, "lang": "en-US", "theme": "light",
+  "output": "assets/real-screen-en.png",
+  "wait": 1500,
   "cookies": [{ "name": "session", "value": "...", "domain": "localhost" }],
-  "localStorage": { "onboardingVu": "1" },
-  "fermer": "^(OK|Plus tard|Tout accepter|Suivant|Fermer)$",
-  "etapes": [
-    { "saisir": { "selecteur": "input[type=email]", "texte": "demo@example.com" } },
-    { "cliquer": "Se connecter" },
-    { "attendre": "/dashboard/.test(location.href)" },
-    { "aller": "http://localhost:5173/invitations" },
+  "localStorage": { "onboardingSeen": "1" },
+  "dismiss": "^(OK|Later|Accept all|Next|Close)$",
+  "steps": [
+    { "type": { "selector": "input[type=email]", "text": "demo@example.com" } },
+    { "click": "Sign in" },
+    { "waitFor": "/dashboard/.test(location.href)" },
+    { "goto": "http://localhost:5173/invitations" },
     { "pause": 1500 },
-    { "masquer": ".bandeau-cookies" },
+    { "hide": ".cookie-banner" },
     { "js": "document.querySelector('input').focus()" }
   ],
-  "boites": { "zoneLien": "document.querySelector('#lien')", "itemMenu": "largeurMin(feuille(/^Inviter$/), 120)" },
-  "styles": { "boutonPrincipal": "document.querySelector('button[type=submit]')", "itemActif": "feuille(/^Tableau de bord$/)" }
+  "boxes": { "linkArea": "document.querySelector('#link')", "menuItem": "minWidth(leaf(/^Invite$/), 120)" },
+  "styles": { "primaryButton": "document.querySelector('button[type=submit]')", "activeItem": "leaf(/^Dashboard$/)" }
 }
 ```
 
-| Clé | Effet |
+| Key | Effect |
 |---|---|
-| `url` | Adresse `http(s)://`, `file://`, ou chemin local (avec `?lang=...` éventuel) |
-| `attente` | Pause après chargement, polices et images prêtes (défaut 1 500 ms en http, 0 pour un fichier) |
-| `fermer` | Expression régulière des boutons qui ferment carrousels, nouveautés et bandeaux ; appliquée après chaque étape |
-| `cliquer` | Texte exact d'un bouton ou d'un lien, `/expression régulière/`, ou sélecteur CSS préfixé par `css:` |
-| `attendre` | Expression JavaScript attendue vraie (25 s au plus) |
-| `boites`, `styles` | Expressions JavaScript qui rendent un élément ; aides : `feuille(re)` (feuille du DOM dont le texte correspond), `ancetreFond(el, 'rgb(...)')`, `largeurMin(el, px)` |
+| `url` | `http(s)://` or `file://` address, or a local path (with an optional `?lang=...`) |
+| `wait` | Pause after loading, once fonts and images are ready (default 1,500 ms over http, 0 for a file) |
+| `dismiss` | Regular expression of the buttons that close carousels, what's-new popups and banners; applied after each step |
+| `click` | Exact text of a button or link, `/regular expression/`, or a CSS selector prefixed with `css:` |
+| `waitFor` | JavaScript expression awaited until true (25 s at most) |
+| `boxes`, `styles` | JavaScript expressions that return an element; helpers: `leaf(re)` (DOM leaf whose text matches), `ancestorWithBg(el, 'rgb(...)')`, `minWidth(el, px)` |
 
-Une session est nécessaire et les cookies ne suffisent pas : se connecter avec le navigateur de
-l'agent s'il en a un, ou par les `etapes` (saisir, cliquer, attendre).
+A session is needed and cookies are not enough: sign in with the agent's browser if it has one,
+or through the `steps` (type, click, waitFor).
 
-## Du JSON au film
+## From the JSON to the film
 
-Les cadres sont en pixels CSS du viewport. Le film affiche la capture dans `#real` à 1 120 px de
-large : échelle `1120 / viewport[0]`, origine (400, 306) dans le monde. `cadresCapture()` de
-`modele/film.html` lit `assets/ecran-reel-<lang>.json` et pose tout seul :
-- l'état `RING` de la forme (cadre final) sur `boites.zoneLien`, 7 px de marge ;
-- l'anneau `#ring2` sur `boites.itemMenu`, 5 px de marge.
+Frames are in CSS pixels of the viewport. The film shows the capture in `#real`, 1,120 px wide:
+scale `1120 / viewport[0]`, origin (400, 306) in the world. `captureFrames()` in
+`template/film.html` reads `assets/real-screen-<lang>.json` and places on its own:
+- the shape's `RING` state (final frame) on `boxes.linkArea`, 7 px margin;
+- the `#ring2` ring on `boxes.menuItem`, 5 px margin.
 
-Garder ces deux noms de boîte, ou adapter `cadresCapture()`. Le film ouvert depuis le disque
-(`file://`) ne lit pas le JSON et garde les cadres écrits dans `ST` : seul le rendu par `render.js`
-fait foi.
+Keep these two box names, or adapt `captureFrames()`. The film opened from disk (`file://`) does
+not read the JSON and keeps the frames written in `ST`: only the render by `render.js` counts.
 
-Une capture par langue : `"lang"` de la recette et `?lang=` de l'app s'il existe, sortie
-`ecran-reel-<lang>.png`.
+One capture per language: the recipe's `"lang"` and the app's `?lang=` if it exists, output
+`real-screen-<lang>.png`.

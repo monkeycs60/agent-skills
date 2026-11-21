@@ -16,7 +16,7 @@ from .util import daterange, data_dir, num, read_json, today, week_label, week_o
 DEFAULT_HR_REST = 55
 SEED_DAYS = 28
 NO_HR_TRIMP_PER_MIN = {"run": 1.2, "ride": 0.9, "strength": 0.8}
-EASY = ("Récupération", "Footing", "Court", "Accélérations", "Sortie longue")
+EASY = ("Recovery run", "Easy run", "Short run", "Strides", "Long run")
 ACTIVITY_COLUMNS = ["id", "source", "sport", "date", "start_local", "name", "distance_km", "moving_min", "pace_s",
                     "avg_hr", "max_hr", "elev_gain_m", "trimp", "trimp_estimated", "structure", "kind", "quality_km",
                     "ef", "decoupling", "z1", "z2", "z3", "z4", "z5", "detail"]
@@ -154,7 +154,7 @@ def lap_structure(laps: list[dict[str, Any]]) -> dict[str, Any] | None:
     size = _fmt_rep(dists, "m") if cv(dists) <= cv(times) else _fmt_rep(times, "s")
     pace = sum(times) / (sum(dists) / 1000)
     hrs = [lp["avg_hr"] for lp in reps if lp.get("avg_hr")]
-    return {"label": f"Fractionné {len(reps)}×{size}", "reps": len(reps), "work_km": sum(dists) / 1000,
+    return {"label": f"Intervals {len(reps)}×{size}", "reps": len(reps), "work_km": sum(dists) / 1000,
             "pace_s": pace, "hr": sum(hrs) / len(hrs) if hrs else None}
 
 
@@ -174,12 +174,12 @@ def classify(act: dict[str, Any], splits: list[dict[str, Any]], profile: Profile
     if len(full) < 3:
         zone = profile.zone_of(act.get("avg_hr"))
         if is_long:
-            return ("Sortie longue soutenue" if zone and zone >= 3 else "Sortie longue"), "long", []
+            return ("Long run, hard" if zone and zone >= 3 else "Long run"), "long", []
         if zone and zone >= 3:
-            return "Séance soutenue", "quality", []
+            return "Hard session", "quality", []
         if zone == 1:
-            return "Récupération", "easy", []
-        return ("Court" if (act.get("distance_m") or 0) < 3000 else "Footing"), "easy", []
+            return "Recovery run", "easy", []
+        return ("Short run" if (act.get("distance_m") or 0) < 3000 else "Easy run"), "easy", []
     t = profile.threshold_s
     paces = [s["pace_s"] for s in full]
     med = median(paces)
@@ -193,25 +193,25 @@ def classify(act: dict[str, Any], splits: list[dict[str, Any]], profile: Profile
         hrs = [s["hr"] for s in full if s.get("hr")]
         zmed = profile.zone_of(median(hrs)) if hrs else None
         if (t and med <= t * 1.04) or len(hard_hr) >= max(3, len(full) / 2):
-            return "Tempo/seuil", "quality", [s["km"] for s in full]
+            return "Tempo/threshold", "quality", [s["km"] for s in full]
         if t and med <= t * 1.10 and len(full) >= 6:
-            return "Allure spécifique continue", "quality", [s["km"] for s in full]
+            return "Continuous race pace", "quality", [s["km"] for s in full]
         if is_long:
-            return "Sortie longue", "long", []
+            return "Long run", "long", []
         if len(hard_hr) >= 3:
-            return "Tempo/seuil", "quality", hard_hr
-        return ("Récupération" if zmed == 1 else "Footing"), "easy", []
+            return "Tempo/threshold", "quality", hard_hr
+        return ("Recovery run" if zmed == 1 else "Easy run"), "easy", []
     fast.sort()
     contiguous = fast[-1] - fast[0] + 1 == len(fast)
     if len(fast) >= 2 and fast[-1] >= n - 1 and fast[0] >= n - max(2, n // 4) and contiguous:
-        return ("Sortie longue progressive" if is_long else "Progressif"), ("long" if is_long else "quality"), fast
+        return ("Long run, fast finish" if is_long else "Progression run"), ("long" if is_long else "quality"), fast
     if contiguous and len(fast) >= 3:
-        return ("Sortie longue avec bloc" if is_long else "Tempo/seuil"), ("long" if is_long else "quality"), fast
+        return ("Long run with block" if is_long else "Tempo/threshold"), ("long" if is_long else "quality"), fast
     if len(fast) >= 3:
-        return "Fractionné", "quality", fast
+        return "Intervals", "quality", fast
     if is_long:
-        return "Sortie longue", "long", fast
-    return "Accélérations", "easy", fast
+        return "Long run", "long", fast
+    return "Strides", "easy", fast
 
 
 def _steady(splits: list[dict[str, Any]]) -> list[dict[str, Any]]:

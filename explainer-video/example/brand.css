@@ -1,11 +1,11 @@
-/* Charte de Coche, produit fictif de l'exemple. Source de chaque valeur : exemple/maquette.html. */
+/* Brand of Coche, the example's fictional product. Source of every value: example/mockup.html. */
 
-@font-face { font-family: 'Inter'; src: url('assets/polices/inter-latin-wght.woff2') format('woff2'); font-weight: 100 900; font-display: block; }
+@font-face { font-family: 'Inter'; src: url('assets/fonts/inter-latin-wght.woff2') format('woff2'); font-weight: 100 900; font-display: block; }
 
 :root {
-  --nom: "Coche";                          /* .logo de la maquette */
-  --logo-clair: none;                      /* aucun fichier de logo : le nom s'ecrit en police de titre */
-  --logo-fonce: none;
+  --name: "Coche";                         /* .logo in the mockup */
+  --logo-light: none;                      /* no logo file: the name is written in the title font */
+  --logo-dark: none;
 
   --font-title: 'Inter', system-ui, sans-serif;   /* body, font-family */
   --font-body: 'Inter', system-ui, sans-serif;
@@ -17,14 +17,14 @@
   --line: #E2E8F0;           /* --border */
   --muted: #64748B;          /* --muted-foreground */
   --txt2: #475569;           /* --secondary-foreground */
-  --accent: #FFD166;         /* --highlight (pastille NOUVEAU) */
+  --accent: #FFD166;         /* --highlight (NEW badge) */
   --success: #16A34A; --success-bg: #DCFCE7; --success-ink: #166534;   /* --success, --success-bg, --success-fg */
   --warning: #D97706; --warning-bg: #FEF3C7; --warning-ink: #92400E;   /* --warning, --warning-bg, --warning-fg */
 
-  --radius-card: 28px;       /* --radius 14px, double */
-  --radius-field: 16px;      /* --radius-input 8px, double */
+  --radius-card: 28px;       /* --radius 14px, doubled */
+  --radius-field: 16px;      /* --radius-input 8px, doubled */
 
-  --tint: #E7EEFD;           /* --primary-soft, item de menu actif */
+  --tint: #E7EEFD;           /* --primary-soft, active menu item */
 
   --brand-deep: color-mix(in srgb, var(--brand) 72%, black);
   --brand-light: color-mix(in srgb, var(--brand) 70%, white);

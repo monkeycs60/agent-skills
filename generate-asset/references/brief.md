@@ -1,26 +1,26 @@
-# Direction artistique et brief Codex
+# Art direction and Codex brief
 
-## Questionnaire quand la DA manque
+## Questionnaire when the art direction is missing
 
-Poser toutes les questions en une fois (AskUserQuestion si disponible, sinon une liste courte), chacune avec une réponse par défaut proposée.
+Ask every question at once (AskUserQuestion if available, otherwise a short list), each with a suggested default answer.
 
-- **Nature** : scène plein cadre, objet isolé, icône, portrait, texture, fond ?
-- **Usage et taille d'affichage** : où l'image apparaît, taille minimale à l'écran, recadrage imposé par l'interface (bandeau, cercle, carré) ?
-- **Ratio et format** : ratio source et ratio affiché, dimensions et format servis (WebP, PNG, SVG), qualité ?
-- **Fond** : transparent ou plein cadre, couleur de fond de l'interface pour les bords ?
-- **Style** : réalisme ou illustration, références, exclusions (texte, logos, cartoon…) ?
-- **Palette et lumière** : hex de la charte, moment de la journée, ambiance ?
-- **Cohérence** : série existante à égaler ou nouvelle série ?
+- **Kind**: full-bleed scene, isolated object, icon, portrait, texture, background?
+- **Use and display size**: where the image appears, minimum on-screen size, crop imposed by the UI (banner, circle, square)?
+- **Ratio and format**: source ratio and displayed ratio, served dimensions and format (WebP, PNG, SVG), quality?
+- **Background**: transparent or full-bleed, UI background color for the edges?
+- **Style**: realism or illustration, references, exclusions (text, logos, cartoon…)?
+- **Palette and lighting**: brand hex colors, time of day, mood?
+- **Consistency**: an existing series to match or a new series?
 
-Ensuite, proposer d'ajouter ou de compléter la section « Direction artistique » du README du projet avec un tableau des familles (dossier servi, source, format, fond, usage) : les générations suivantes n'auront plus à reposer les questions.
+Then offer to add or complete the "Art direction" section of the project's README with a table of asset families (served folder, source, format, background, use): later generations won't need to ask the questions again.
 
-## DA commune d'un lot
+## Shared art direction of a batch
 
-Style, palette en hex, lumière, cadrage, format, fond (plein cadre ou transparent), usages et tailles d'affichage. La lisibilité se juge à la plus petite taille d'affichage.
+Style, palette in hex, lighting, framing, format, background (full-bleed or transparent), uses and display sizes. Legibility is judged at the smallest display size.
 
-## Modèle de brief
+## Brief template
 
-Fichier `/tmp/<slug>-prompt.md`, en anglais :
+File `/tmp/<slug>-prompt.md`, in English:
 
 ```markdown
 Use your imagegen skill (built-in image_gen tool, one call per image) to generate <N> <type> for <project, context>.

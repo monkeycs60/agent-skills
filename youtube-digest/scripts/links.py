@@ -90,7 +90,7 @@ def http_text(url):
     parser.feed(raw)
     text = re.sub(r"\n\s*\n\s*\n+", "\n\n", "".join(parser.parts)).strip()
     if not text:
-        raise RuntimeError("page vide (rendue en JavaScript ?) : installer agent-browser")
+        raise RuntimeError("empty page (rendered with JavaScript?): install agent-browser")
     return text
 
 
@@ -98,14 +98,14 @@ def github(match):
     owner, repo, kind, ref, path = match.groups()
     repo = f"{owner}/{repo.removesuffix('.git')}"
     if not shutil.which("gh"):
-        raise RuntimeError("gh absent : installer GitHub CLI pour lire les dépôts")
+        raise RuntimeError("gh missing: install GitHub CLI to read repositories")
     if kind == "tree":
         listing = run(["gh", "api", f"repos/{repo}/contents/{path}?ref={ref}", "--jq", ".[].path"])
         if listing.returncode:
             raise RuntimeError(listing.stderr.strip()[-300:])
         readme = run(["gh", "api", f"repos/{repo}/contents/{path}/README.md?ref={ref}",
                       "-H", "Accept: application/vnd.github.raw"])
-        return f"# {repo} · {path} ({ref})\n\n{readme.stdout}\n\n## Fichiers\n\n{listing.stdout}"
+        return f"# {repo} · {path} ({ref})\n\n{readme.stdout}\n\n## Files\n\n{listing.stdout}"
     if path:
         r = run(["gh", "api", f"repos/{repo}/contents/{path}?ref={ref}", "-H", "Accept: application/vnd.github.raw"])
         if r.returncode:
@@ -117,7 +117,7 @@ def github(match):
     tree = run(["gh", "api", f"repos/{repo}/git/trees/HEAD?recursive=1", "--jq",
                 '.tree[] | select(.type=="blob") | .path'])
     files = tree.stdout.splitlines()
-    return f"# Dépôt {repo}\n\n{readme.stdout}\n\n## Fichiers ({len(files)})\n\n" + "\n".join(files[:300])
+    return f"# Repository {repo}\n\n{readme.stdout}\n\n## Files ({len(files)})\n\n" + "\n".join(files[:300])
 
 
 def page(url, http_only=False):
@@ -132,7 +132,9 @@ def page(url, http_only=False):
 
 
 def read(video_id, urls, close=True, http_only=False):
-    folder = DATA / video_id / "liens"
+    folder = DATA / video_id / "links"
+    if not folder.exists() and (DATA / video_id / "liens").exists():
+        folder = DATA / video_id / "liens"
     folder.mkdir(parents=True, exist_ok=True)
     results = []
     for n, url in enumerate(urls, 1):
@@ -154,9 +156,9 @@ def read(video_id, urls, close=True, http_only=False):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("video_id", help="dossier où ranger les textes lus")
+    ap.add_argument("video_id", help="video folder where the texts are saved")
     ap.add_argument("urls", nargs="+")
-    ap.add_argument("--http", action="store_true", help="ne pas lancer de navigateur")
+    ap.add_argument("--http", action="store_true", help="do not launch a browser")
     a = ap.parse_args()
     results = read(a.video_id, a.urls, http_only=a.http)
     print(json.dumps(results, ensure_ascii=False, indent=1))

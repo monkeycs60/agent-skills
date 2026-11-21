@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gpx version="1.1" creator="fixture" xmlns="http://www.topografix.com/GPX/1/1" xmlns:gpxtpx="http://www.garmin.com/xmlschemas/TrackPointExtension/v1">
 <metadata><time>2026-10-08T05:00:00Z</time></metadata>
-<trk><name>Footing du jeudi</name><type>running</type><trkseg>
+<trk><name>Thursday easy run</name><type>running</type><trkseg>
 <trkpt lat="40.7812000" lon="-73.9665000"><ele>20.0</ele><time>2026-10-08T05:00:00Z</time><extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>100</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions></trkpt>
 <trkpt lat="40.7814414" lon="-73.9664865"><ele>19.9</ele><time>2026-10-08T05:00:10Z</time><extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>117</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions></trkpt>
 <trkpt lat="40.7816895" lon="-73.9664442"><ele>20.5</ele><time>2026-10-08T05:00:20Z</time><extensions><gpxtpx:TrackPointExtension><gpxtpx:hr>128</gpxtpx:hr></gpxtpx:TrackPointExtension></extensions></trkpt>

@@ -30,24 +30,24 @@ python_ok() {
 }
 
 os="$(uname -s)"
-echo "Skill youtube : $skill"
+echo "youtube skill: $skill"
 
-echo "1. Emplacement"
+echo "1. Location"
 for dir in "$HOME/.claude/skills" "$HOME/.codex/skills" "$HOME/.agents/skills"; do
   [ "$dir" = "$HOME/.claude/skills" ] && mkdir -p "$dir"
   [ -d "$dir" ] || continue
   target="$dir/$(basename "$skill")"
   if [ "$(cd "$target" 2>/dev/null && pwd -P)" = "$skill" ]; then ok "$target"
-  elif [ -e "$target" ] || [ -L "$target" ]; then warn "$target existe déjà et pointe ailleurs : laissé tel quel"
+  elif [ -e "$target" ] || [ -L "$target" ]; then warn "$target already exists and points elsewhere: left as is"
   else ln -s "$skill" "$target" && ok "$target → $skill"
   fi
 done
 chmod +x "$skill/scripts/yt" "$skill/install.sh"
 
-echo "2. Python 3.10 ou plus récent"
+echo "2. Python 3.10 or newer"
 if py="$(python_ok)"; then ok "$py ($("$py" -V 2>&1))"
-elif has uv; then uv python install 3.12 >/dev/null 2>&1 && ok "Python 3.12 installé par uv" || bad "uv n'a pas pu installer Python 3.12"
-else bad "introuvable : installer Python 3.10+ (macOS : brew install python) ou uv (https://docs.astral.sh/uv/)"
+elif has uv; then uv python install 3.12 >/dev/null 2>&1 && ok "Python 3.12 installed by uv" || bad "uv could not install Python 3.12"
+else bad "not found: install Python 3.10+ (macOS: brew install python) or uv (https://docs.astral.sh/uv/)"
 fi
 
 echo "3. yt-dlp"
@@ -60,39 +60,39 @@ else
     *) asset=yt-dlp ;;
   esac
   if download "https://github.com/yt-dlp/yt-dlp/releases/latest/download/$asset" "$bin/yt-dlp" && chmod +x "$bin/yt-dlp"; then
-    ok "yt-dlp $("$bin/yt-dlp" --version 2>/dev/null) installé dans $bin"
-  else bad "téléchargement de yt-dlp impossible"
+    ok "yt-dlp $("$bin/yt-dlp" --version 2>/dev/null) installed in $bin"
+  else bad "could not download yt-dlp"
   fi
 fi
-case ":$original_path:" in *":$bin:"*) ;; *) warn "$bin n'est pas dans le PATH du shell : ajouter export PATH=\"$bin:\$PATH\" au profil" ;; esac
+case ":$original_path:" in *":$bin:"*) ;; *) warn "$bin is not in the shell PATH: add export PATH=\"$bin:\$PATH\" to your profile" ;; esac
 
-echo "4. Moteur JavaScript pour YouTube"
+echo "4. JavaScript runtime for YouTube"
 if has deno || has node || has bun; then ok "$(for r in deno node bun; do has "$r" && printf '%s ' "$r"; done)"
-else warn "ni deno, ni node, ni bun : YouTube peut refuser certaines vidéos ; installer Node.js"
+else warn "no deno, node or bun: YouTube may refuse some videos; install Node.js"
 fi
 
-echo "5. Optionnel"
-if has ffmpeg; then ok "ffmpeg (vidéos sans sous-titres)"
-elif [ "$os" = Darwin ]; then warn "ffmpeg absent : brew install ffmpeg (seulement pour les vidéos sans sous-titres)"
-else warn "ffmpeg absent : sudo apt install ffmpeg (seulement pour les vidéos sans sous-titres)"
+echo "5. Optional"
+if has ffmpeg; then ok "ffmpeg (videos without captions)"
+elif [ "$os" = Darwin ]; then warn "ffmpeg missing: brew install ffmpeg (only for videos without captions)"
+else warn "ffmpeg missing: sudo apt install ffmpeg (only for videos without captions)"
 fi
-if has uv; then ok "uv (installation du moteur de transcription locale)"; else warn "uv absent : repli sur python -m venv"; fi
+if has uv; then ok "uv (installs the local transcription engine)"; else warn "uv missing: falls back to python -m venv"; fi
 chrome="$("${py:-python3}" -I -c "import sys; sys.path.insert(0, '$skill/scripts'); import report; print(report.find_chrome() or '')" 2>/dev/null)"
-if [ -n "$chrome" ]; then ok "Chrome : $chrome (schémas)"; else warn "Chrome introuvable : les schémas resteront en source (CHROME_PATH pour l'indiquer)"; fi
+if [ -n "$chrome" ]; then ok "Chrome: $chrome (diagrams)"; else warn "Chrome not found: diagrams will stay as source (set CHROME_PATH to point to it)"; fi
 browser="$("${py:-python3}" -I -c "import sys; sys.path.insert(0, '$skill/scripts'); import links; print(links.BROWSER or '')" 2>/dev/null)"
-if [ -n "$browser" ]; then ok "agent-browser : $browser (pages des liens)"; else warn "agent-browser absent : liens lus en HTTP simple (npm i -g agent-browser && agent-browser install)"; fi
-if has gh && gh auth status >/dev/null 2>&1; then ok "gh connecté (dépôts GitHub)"; else warn "gh absent ou non connecté : les dépôts GitHub cités ne seront pas lus"; fi
+if [ -n "$browser" ]; then ok "agent-browser: $browser (linked pages)"; else warn "agent-browser missing: links read over plain HTTP (npm i -g agent-browser && agent-browser install)"; fi
+if has gh && gh auth status >/dev/null 2>&1; then ok "gh signed in (GitHub repositories)"; else warn "gh missing or not signed in: GitHub repositories cited will not be read"; fi
 
-echo "6. Essai réel"
+echo "6. Live test"
 if [ "$missing" = 0 ]; then
   started=$(date +%s)
   if out="$("$skill/scripts/yt" transcript "https://youtu.be/KKNCiRWd_j0" 2>&1)"; then
-    ok "transcription récupérée en $(( $(date +%s) - started )) s : $(printf '%s' "$out" | tail -1 | cut -c1-110)…"
-  else bad "échec : $(printf '%s' "$out" | tail -2)"
+    ok "transcript fetched in $(( $(date +%s) - started )) s: $(printf '%s' "$out" | tail -1 | cut -c1-110)…"
+  else bad "failed: $(printf '%s' "$out" | tail -2)"
   fi
 fi
 
 echo
-if [ "$missing" = 0 ]; then echo "Prêt. Coller un lien YouTube à l'agent, ou lancer : $skill/scripts/yt transcript <url>"
-else echo "Installation incomplète : corriger les lignes marquées ✗ puis relancer install.sh"; exit 1
+if [ "$missing" = 0 ]; then echo "Ready. Paste a YouTube link to the agent, or run: $skill/scripts/yt transcript <url>"
+else echo "Incomplete installation: fix the lines marked ✗ then run install.sh again"; exit 1
 fi

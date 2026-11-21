@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Miniature YouTube</title>
-<link rel="stylesheet" href="charte.css">
+<title>YouTube thumbnail</title>
+<link rel="stylesheet" href="brand.css">
 <style>
 * { box-sizing: border-box; }
 html, body { margin: 0; background: #111; }
@@ -21,7 +21,7 @@ html, body { margin: 0; background: #111; }
   <div class="a" style="width:1280px;height:720px;opacity:.5;background-image:radial-gradient(circle, rgba(255,255,255,.22) 1.6px, transparent 2.3px);background-size:34px 34px;
     -webkit-mask-image:linear-gradient(90deg, rgba(0,0,0,.9), rgba(0,0,0,.2) 55%, rgba(0,0,0,0) 80%)"></div>
 
-  <img class="a" data-logo="fonce" style="left:66px;top:54px;height:44px" alt="">
+  <img class="a" data-logo="dark" style="left:66px;top:54px;height:44px" alt="">
 
   <div class="a u" style="left:60px;top:150px;color:#fff;font-weight:900;font-size:128px;letter-spacing:-.05em;line-height:.93">
     <div data-k="l1"></div>
@@ -66,18 +66,18 @@ html, body { margin: 0; background: #111; }
     <span data-k="result"></span>
   </div>
 </div>
-<script src="moteur.js"></script>
+<script src="engine.js"></script>
 <script>
 const TXT = {
   fr: { l1: 'Invitez', l2: 'l’équipe', promise: 'en un seul lien', chat: 'Équipe Produit', members: '3 membres', domain: 'COCHE.EXAMPLE', result: '+1 membre' },
   en: { l1: 'Invite', l2: 'the team', promise: 'with a single link', chat: 'Product Team', members: '3 members', domain: 'COCHE.EXAMPLE', result: '+1 member' }
 };
-const LANG = new URLSearchParams(location.search).get('lang') || 'fr';
+const LANG = new URLSearchParams(location.search).get('lang') || 'en';
 document.documentElement.lang = LANG;
-document.querySelectorAll('[data-k]').forEach(e => { e.textContent = (TXT[LANG] || TXT.fr)[e.dataset.k]; });
+document.querySelectorAll('[data-k]').forEach(e => { e.textContent = (TXT[LANG] || TXT.en)[e.dataset.k]; });
 logos();
 window.READY = (async () => {
-  await Promise.all(policesCharte().map(f => document.fonts.load(f)));
+  await Promise.all(brandFonts().map(f => document.fonts.load(f)));
   await document.fonts.ready;
   await Promise.all([...document.images].map(i => i.decode().catch(() => {})));
   return true;

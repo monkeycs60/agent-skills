@@ -124,7 +124,7 @@ def _same_activity(a: dict[str, Any], b: dict[str, Any]) -> bool:
 def get(activity_id: str) -> dict[str, Any]:
     act = read_json(activities_dir() / f"{activity_id}.json")
     if act is None:
-        raise CoachError(f"activité introuvable : {activity_id}")
+        raise CoachError(f"activity not found: {activity_id}")
     return act
 
 
@@ -162,24 +162,24 @@ def sorted_ids(index: dict[str, dict[str, Any]], sport: str | None = None) -> li
 def find(identifier: str, index: dict[str, dict[str, Any]], sport: str | None = "run") -> str:
     ids = sorted_ids(index, sport)
     if not ids:
-        raise CoachError("aucune activité enregistrée : lancer `coach sync` ou `coach import <fichiers>`")
+        raise CoachError("no activities recorded: run `coach sync` or `coach import <files>`")
     ident = identifier.strip()
     m = re.fullmatch(r"last(?:-(\d+))?", ident)
     if m:
         back = int(m.group(1) or 0)
         if back >= len(ids):
-            raise CoachError(f"seulement {len(ids)} activité(s) enregistrée(s)")
+            raise CoachError(f"only {len(ids)} activity(ies) recorded")
         return ids[-1 - back]
     if ident in index:
         return ident
     if re.fullmatch(r"\d{4}-\d{2}-\d{2}", ident):
         same_day = [i for i in ids if index[i]["start_local"].startswith(ident)]
         if not same_day:
-            raise CoachError(f"aucune activité le {ident}")
+            raise CoachError(f"no activity on {ident}")
         return max(same_day, key=lambda i: index[i]["distance_m"])
     matches = [i for i in ids if index[i]["source_id"] == ident or i.endswith(ident)]
     if not matches:
-        raise CoachError(f"aucune activité ne correspond à {ident!r} (id, AAAA-MM-JJ, last ou last-N)")
+        raise CoachError(f"no activity matches {ident!r} (id, YYYY-MM-DD, last or last-N)")
     return matches[-1]
 
 

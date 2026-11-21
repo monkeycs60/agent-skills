@@ -37,25 +37,25 @@ version="$(installed_version)"
 if [ -n "$version" ] && at_least "$version" "$MINIMUM"; then
   ok "agent-browser $version"
 else
-  [ -n "$version" ] && note "agent-browser $version trop ancien (minimum $MINIMUM) : installation de $PINNED dans $bindir"
-  command -v npm >/dev/null 2>&1 || die "npm introuvable : installer Node.js 22 ou plus récent (https://nodejs.org), puis relancer."
+  [ -n "$version" ] && note "agent-browser $version is too old (minimum $MINIMUM): installing $PINNED into $bindir"
+  command -v npm >/dev/null 2>&1 || die "npm not found: install Node.js 22 or later (https://nodejs.org), then run again."
   node_major="$(node -p 'process.versions.node.split(".")[0]' 2>/dev/null || echo 0)"
-  [ "$node_major" -ge 22 ] || die "Node.js $node_major trouvé, agent-browser exige Node.js 22 ou plus récent."
+  [ "$node_major" -ge 22 ] || die "found Node.js $node_major; agent-browser requires Node.js 22 or later."
   npm install --global --prefix "$HOME/.local" --ignore-scripts --no-fund --no-audit \
     --no-update-notifier --loglevel=error "agent-browser@$PINNED" >/dev/null
   "$bindir/agent-browser" --version >/dev/null
   version="$(installed_version)"
   if [ -z "$version" ] || ! at_least "$version" "$MINIMUM"; then
-    die "agent-browser $PINNED installé dans $bindir, mais ab trouve encore ${version:-rien} (AGENT_BROWSER_BIN ?)."
+    die "agent-browser $PINNED installed in $bindir, but ab still finds ${version:-nothing} (AGENT_BROWSER_BIN?)."
   fi
-  ok "agent-browser $version installé dans $bindir"
+  ok "agent-browser $version installed in $bindir"
 fi
 
 report="$(iso doctor --offline --quick --json 2>/dev/null || true)"
 if grep -q '"id":"chrome.installed","message":"[^"]*","status":"pass"' <<<"$report"; then
-  ok "navigateur disponible"
+  ok "browser available"
 else
-  echo "  … téléchargement de Chrome for Testing (environ 200 Mo)"
+  echo "  … downloading Chrome for Testing (about 200 MB)"
   iso install 2>&1 | grep -E '^ *(✓|✗)' | sed 's/^ */    /' || true
 fi
 
@@ -64,28 +64,28 @@ for dir in "$HOME/.claude/skills" "$HOME/.codex/skills" "$HOME/.agents/skills"; 
   [ -d "$dir" ] || continue
   target="$dir/$NAME"
   if [ "$(cd "$target" 2>/dev/null && pwd -P)" = "$skill" ]; then ok "$target"
-  elif [ -e "$target" ] || [ -L "$target" ]; then note "$target existe déjà : laissé tel quel"
+  elif [ -e "$target" ] || [ -L "$target" ]; then note "$target already exists: left as is"
   else ln -s "$skill" "$target" && ok "$target → $skill"
   fi
 done
 
 mkdir -p "$bindir"
 if [ "$bindir/ab" -ef "$ab" ]; then ok "$bindir/ab"
-elif [ -e "$bindir/ab" ] || [ -L "$bindir/ab" ]; then note "$bindir/ab existe déjà (autre outil) : laissé tel quel. Appeler $ab"
+elif [ -e "$bindir/ab" ] || [ -L "$bindir/ab" ]; then note "$bindir/ab already exists (another tool): left as is. Call $ab"
 else ln -s "$ab" "$bindir/ab" && ok "$bindir/ab → $ab"
 fi
 case ":$PATH:" in
   *":$bindir:"*)
     resolved="$(command -v ab || true)"
-    [ "$resolved" = "$bindir/ab" ] || note "ab désigne $resolved, placé avant $bindir dans le PATH : appeler $ab" ;;
-  *) note "$bindir n'est pas dans le PATH : ajouter export PATH=\"\$HOME/.local/bin:\$PATH\" au profil du shell, ou appeler $ab" ;;
+    [ "$resolved" = "$bindir/ab" ] || note "ab resolves to $resolved, which comes before $bindir in PATH: call $ab" ;;
+  *) note "$bindir is not in PATH: add export PATH=\"\$HOME/.local/bin:\$PATH\" to the shell profile, or call $ab" ;;
 esac
 
 if command -v ffmpeg >/dev/null 2>&1; then
   encoders="$(ffmpeg -hide_banner -encoders 2>/dev/null || true)"
-  [[ "$encoders" == *libvpx* && "$encoders" == *libx264* ]] || note "ffmpeg sans libvpx ou libx264 : ab record échouera"
+  [[ "$encoders" == *libvpx* && "$encoders" == *libx264* ]] || note "ffmpeg lacks libvpx or libx264: ab record will fail"
 else
-  note "ffmpeg absent : seules les vidéos (ab record) en ont besoin. macOS : brew install ffmpeg ; Debian/Ubuntu : sudo apt install ffmpeg"
+  note "ffmpeg missing: only videos (ab record) need it. macOS: brew install ffmpeg; Debian/Ubuntu: sudo apt install ffmpeg"
 fi
 
 smoke() {
@@ -105,17 +105,17 @@ trap 'rm -f "$log"' EXIT
 if ! smoke "$log"; then
   if [ "$(uname -s)" = Linux ] && grep -q 'shared libraries' "$log"; then
     if [ "$(id -u)" = 0 ]; then
-      echo "  … installation des bibliothèques système de Chrome"
+      echo "  … installing Chrome's system libraries"
       iso install --with-deps >/dev/null 2>&1 || true
-      smoke "$log" || { cat "$log" >&2; die "le navigateur isolé ne démarre pas."; }
+      smoke "$log" || { cat "$log" >&2; die "the isolated browser does not start."; }
     else
-      die "Chrome manque de bibliothèques système. Lancer une fois : AB_ISOLATED=1 $ab install --with-deps (demande sudo), puis relancer ce script."
+      die "Chrome is missing system libraries. Run once: AB_ISOLATED=1 $ab install --with-deps (asks for sudo), then run this script again."
     fi
   else
     cat "$log" >&2
-    die "le navigateur isolé ne démarre pas. Diagnostic : AB_ISOLATED=1 $ab doctor"
+    die "the isolated browser does not start. To diagnose: AB_ISOLATED=1 $ab doctor"
   fi
 fi
-ok "test isolé : ouverture, snapshot, capture, fermeture ($(( $(date +%s) - started )) s au total)"
+ok "isolated test: open, snapshot, screenshot, close ($(( $(date +%s) - started )) s in total)"
 
-echo "  Vrai Chrome (une seule fois) : Chrome 144 ou plus récent, ouvrir chrome://inspect/#remote-debugging et autoriser le débogage à distance."
+echo "  Real Chrome (once): Chrome 144 or later, open chrome://inspect/#remote-debugging and allow remote debugging."

@@ -5,11 +5,11 @@ from typing import Any
 
 from . import metrics
 from .profile import Profile
-from .util import CoachError, config_dir, day_fr, fmt_pace, parse_date, parse_day, parse_week, read_json, week_label, week_of
+from .util import CoachError, config_dir, day_abbr, fmt_pace, parse_date, parse_day, parse_week, read_json, week_label, week_of
 
 SESSION_TYPES = ("easy", "long", "quality", "race", "rest")
-TYPE_FR = {"easy": "footing", "long": "sortie longue", "quality": "qualité", "race": "course", "rest": "repos"}
-STATUS_FR = {"done": "✅ fait", "missed": "❌ manqué", "today": "▶ aujourd'hui", "upcoming": "⏳ à venir", "rest": "· repos"}
+TYPE_LABELS = {"easy": "easy run", "long": "long run", "quality": "quality", "race": "race", "rest": "rest"}
+STATUS_LABELS = {"done": "✅ done", "missed": "❌ missed", "today": "▶ today", "upcoming": "⏳ upcoming", "rest": "· rest"}
 LONG_CAP_KM = {5.0: 14, 10.0: 18, 21.1: 22, 42.2: 32}
 
 
@@ -22,18 +22,18 @@ def load_plan() -> dict[str, Any] | None:
     if plan is None:
         return None
     if not isinstance(plan.get("weeks"), dict):
-        raise CoachError(f"{plan_path()} : champ weeks (objet « AAAA-Wnn » → semaine) requis")
+        raise CoachError(f"{plan_path()}: field weeks (object \"YYYY-Wnn\" → week) is required")
     for label, week in plan["weeks"].items():
         parse_week(label)
         for i, s in enumerate(week.get("sessions") or []):
-            where = f"plan {label} séance {i + 1}"
+            where = f"plan {label} session {i + 1}"
             if "day" not in s:
-                raise CoachError(f"{where} : day requis (mon…sun)")
+                raise CoachError(f"{where}: day is required (mon…sun)")
             parse_day(s["day"])
             if s.get("type", "easy") not in SESSION_TYPES:
-                raise CoachError(f"{where} : type parmi {', '.join(SESSION_TYPES)}")
+                raise CoachError(f"{where}: type must be one of {', '.join(SESSION_TYPES)}")
             if s.get("priority", 2) not in (1, 2, 3):
-                raise CoachError(f"{where} : priority vaut 1 (clé), 2 ou 3 (facultative)")
+                raise CoachError(f"{where}: priority is 1 (key), 2 or 3 (optional)")
     if plan.get("start"):
         parse_date(plan["start"])
     return plan
@@ -100,21 +100,21 @@ def adherence(week: dict[str, Any], runs: list[dict[str, Any]], d: date, ref: da
 def phase(profile: Profile, d: date) -> tuple[str, int | None]:
     gd = profile.goal_date
     if not gd:
-        return "Entretien", None
+        return "Maintenance", None
     days = (gd - d).days
     if days < 0:
-        return ("Récupération après course" if days >= -14 else "Entretien"), days
+        return ("Post-race recovery" if days >= -14 else "Maintenance"), days
     if days == 0:
-        return "Jour de course", 0
+        return "Race day", 0
     taper = 21 if (profile.goal_km or 0) >= 30 else 14
     if days <= 7:
-        return "Semaine de course", days
+        return "Race week", days
     if days <= taper:
-        return "Affûtage", days
+        return "Taper", days
     if days <= 56:
-        return "Spécifique", days
+        return "Specific", days
     if days <= 112:
-        return "Développement", days
+        return "Build", days
     return "Base", days
 
 
@@ -138,7 +138,7 @@ def _target_txt(t: dict[str, Any] | None) -> str:
         return ""
     if "pace" in t:
         return f"{t['pace'][0]}–{t['pace'][1]}/km"
-    return f"FC {t['hr'][0]}–{t['hr'][1]}"
+    return f"HR {t['hr'][0]}–{t['hr'][1]}"
 
 
 def _wu(profile: Profile, minutes: int = 15) -> dict[str, Any]:
@@ -152,65 +152,65 @@ def _cd(profile: Profile, minutes: int = 10) -> dict[str, Any]:
 def session(kind: str, profile: Profile, volume: float, **kw: Any) -> dict[str, Any]:
     z2 = _hr(profile, 2, 2)
     easy_pace = profile.pace_band("Endurance")
-    pace_hint = f", allure indicative {fmt_pace(easy_pace[0])}–{fmt_pace(easy_pace[1])}/km" if easy_pace else ""
+    pace_hint = f", indicative pace {fmt_pace(easy_pace[0])}–{fmt_pace(easy_pace[1])}/km" if easy_pace else ""
     if kind == "rest":
-        return {"title": "Repos", "lines": ["Repos complet, ou 20 à 30 min de marche, mobilité ou renforcement léger."], "spec": None}
+        return {"title": "Rest", "lines": ["Full rest, or 20 to 30 min of walking, mobility or light strength work."], "spec": None}
     if kind == "recovery":
         minutes = kw.get("minutes", 30)
         t = _hr(profile, 1, 1)
-        return {"title": f"Footing de récupération — {minutes} min",
-                "lines": [f"{minutes} min très faciles en Z1 ({_target_txt(t)}), on doit pouvoir parler sans effort."],
-                "spec": {"name": f"Récupération {minutes}'", "steps": [{"kind": "interval", "dur": f"{minutes}:00", "target": t}]}}
+        return {"title": f"Recovery run — {minutes} min",
+                "lines": [f"{minutes} min very easy in Z1 ({_target_txt(t)}): you can talk without effort."],
+                "spec": {"name": f"Recovery {minutes}'", "steps": [{"kind": "interval", "dur": f"{minutes}:00", "target": t}]}}
     if kind == "easy":
         minutes = kw.get("minutes", 45)
         strides = kw.get("strides", False)
         steps = [{"kind": "interval", "dur": f"{minutes}:00", "target": z2}]
-        lines = [f"{minutes} min en Z2 ({_target_txt(z2)}){pace_hint}."]
+        lines = [f"{minutes} min in Z2 ({_target_txt(z2)}){pace_hint}."]
         if strides:
             steps.append({"kind": "repeat", "times": 6, "steps": [
                 {"kind": "interval", "dur": "0:20", "target": {"open": True}},
                 {"kind": "recovery", "dur": "1:00", "target": {"open": True}}]})
-            lines.append("Finir par 6 accélérations progressives de 20 s, récupération 1 min en trottinant.")
-        return {"title": f"Footing — {minutes} min" + (" + lignes droites" if strides else ""), "lines": lines,
-                "spec": {"name": f"Footing {minutes}'", "steps": steps}}
+            lines.append("Finish with 6 progressive 20 s strides, 1 min jogging recovery.")
+        return {"title": f"Easy run — {minutes} min" + (" + strides" if strides else ""), "lines": lines,
+                "spec": {"name": f"Easy {minutes}'", "steps": steps}}
     if kind == "long":
         km = kw["km"]
         finish = kw.get("finish_pace")
         steps = [{"kind": "interval", "dist": int((km - (kw.get("finish_km") or 0)) * 1000), "target": z2}]
-        lines = [f"{km:g} km en Z2 strict ({_target_txt(z2)}){pace_hint} : la FC ne dépasse pas le haut de Z2, même en fin de sortie."]
+        lines = [f"{km:g} km in strict Z2 ({_target_txt(z2)}){pace_hint}: HR stays below the top of Z2, even at the end."]
         if finish:
             fk = kw["finish_km"]
             steps.append({"kind": "interval", "dist": int(fk * 1000), "target": _pace(profile, "", finish)})
-            lines.append(f"Dont les {fk:g} derniers km à l'allure objectif ({fmt_pace(finish)}/km).")
+            lines.append(f"Including the last {fk:g} km at goal pace ({fmt_pace(finish)}/km).")
         if km >= 16:
-            lines.append("Boire régulièrement ; au-delà de 1 h 15, tester la nutrition prévue pour la course.")
-        return {"title": f"Sortie longue — {km:g} km", "lines": lines,
-                "spec": {"name": f"Sortie longue {km:g} km", "steps": steps}}
+            lines.append("Drink regularly; beyond 1 h 15, test your race-day nutrition.")
+        return {"title": f"Long run — {km:g} km", "lines": lines,
+                "spec": {"name": f"Long run {km:g} km", "steps": steps}}
     if kind == "threshold":
         reps, minutes = (2, 10) if volume < 30 else (3, 10) if volume < 50 else (4, 10)
-        t = _pace(profile, "Seuil") or _hr(profile, 4, 4)
-        return {"title": f"Seuil — {reps} × {minutes} min",
-                "lines": [f"15 min d'échauffement en Z1-Z2, puis {reps} × {minutes} min au seuil ({_target_txt(t)} ; "
-                          f"FC en Z4 {profile.zone_range(4)[0]}–{profile.zone_range(4)[1]}), récupération 2 min en trottinant, 10 min de retour au calme.",
-                          "Effort « confortablement difficile » : on pourrait tenir 1 h. Les répétitions sont régulières, la dernière aussi rapide que la première."],
-                "spec": {"name": f"Seuil {reps}x{minutes}'", "steps": [_wu(profile), {"kind": "repeat", "times": reps, "steps": [
+        t = _pace(profile, "Threshold") or _hr(profile, 4, 4)
+        return {"title": f"Threshold — {reps} × {minutes} min",
+                "lines": [f"15 min warm-up in Z1-Z2, then {reps} × {minutes} min at threshold ({_target_txt(t)}; "
+                          f"HR in Z4 {profile.zone_range(4)[0]}–{profile.zone_range(4)[1]}), 2 min jogging recovery, 10 min cool-down.",
+                          "\"Comfortably hard\" effort: one you could hold for 1 h. Even reps, the last as fast as the first."],
+                "spec": {"name": f"Threshold {reps}x{minutes}'", "steps": [_wu(profile), {"kind": "repeat", "times": reps, "steps": [
                     {"kind": "interval", "dur": f"{minutes}:00", "target": t},
                     {"kind": "recovery", "dur": "2:00", "target": {"open": True}}]}, _cd(profile)]}}
     if kind == "vo2":
         reps, dist = (5, 800) if volume < 30 else (5, 1000) if volume < 50 else (6, 1000)
-        t = _pace(profile, "VMA") or _hr(profile, 5, 5)
-        return {"title": f"VMA — {reps} × {dist} m",
-                "lines": [f"15 min d'échauffement avec 3 accélérations, puis {reps} × {dist} m ({_target_txt(t)}), "
-                          f"récupération 2 min en trottinant, 10 min de retour au calme.",
-                          "Arrêter la série si l'allure chute de plus de 5 s/km sur deux répétitions de suite."],
-                "spec": {"name": f"VMA {reps}x{dist}m", "steps": [_wu(profile), {"kind": "repeat", "times": reps, "steps": [
+        t = _pace(profile, "VO2max") or _hr(profile, 5, 5)
+        return {"title": f"VO2max — {reps} × {dist} m",
+                "lines": [f"15 min warm-up with 3 strides, then {reps} × {dist} m ({_target_txt(t)}), "
+                          f"2 min jogging recovery, 10 min cool-down.",
+                          "Stop the set if pace drops by more than 5 s/km on two reps in a row."],
+                "spec": {"name": f"VO2max {reps}x{dist}m", "steps": [_wu(profile), {"kind": "repeat", "times": reps, "steps": [
                     {"kind": "interval", "dist": dist, "target": t},
                     {"kind": "recovery", "dur": "2:00", "target": {"open": True}}]}, _cd(profile)]}}
     if kind == "fartlek":
         reps = 8 if volume < 30 else 10 if volume < 50 else 12
-        return {"title": f"Fartlek — {reps} × (1 min vite / 1 min lent)",
-                "lines": [f"15 min faciles, puis {reps} × (1 min vite, allure 5-10 km ressentie / 1 min trottinée), 10 min faciles.",
-                          "Séance de relance sans chrono strict : vite mais relâché."],
+        return {"title": f"Fartlek — {reps} × (1 min fast / 1 min easy)",
+                "lines": [f"15 min easy, then {reps} × (1 min fast, perceived 5-10 km pace / 1 min jog), 10 min easy.",
+                          "A sharpening session without strict timing: fast but relaxed."],
                 "spec": {"name": f"Fartlek {reps}x1'", "steps": [_wu(profile), {"kind": "repeat", "times": reps, "steps": [
                     {"kind": "interval", "dur": "1:00", "target": {"open": True}},
                     {"kind": "recovery", "dur": "1:00", "target": {"open": True}}]}, _cd(profile)]}}
@@ -219,7 +219,7 @@ def session(kind: str, profile: Profile, volume: float, **kw: Any) -> dict[str, 
         pace = profile.race_pace()
         taper = kw.get("taper", False)
         if goal_km >= 30:
-            reps, dist, rec = (2, 3000, "1 km facile") if taper else (3, 3000, "1 km facile") if volume < 50 else (3, 4000, "1 km facile")
+            reps, dist, rec = (2, 3000, "1 km easy") if taper else (3, 3000, "1 km easy") if volume < 50 else (3, 4000, "1 km easy")
             rec_step = {"kind": "recovery", "dist": 1000, "target": z2}
         elif goal_km >= 15:
             reps, dist, rec = (2, 2000, "3 min") if taper else (3, 3000, "3 min")
@@ -231,18 +231,18 @@ def session(kind: str, profile: Profile, volume: float, **kw: Any) -> dict[str, 
             reps, dist, rec = (4, 400, "1 min 30") if taper else (6, 800, "2 min")
             rec_step = {"kind": "recovery", "dur": "2:00", "target": {"open": True}}
         t = _pace(profile, "", pace) if pace else _hr(profile, 3, 4)
-        name = f"Allure objectif {reps}x{dist / 1000:g} km"
-        return {"title": f"Allure objectif — {reps} × {dist / 1000:g} km",
-                "lines": [f"15 min d'échauffement, {reps} × {dist / 1000:g} km à l'allure objectif ({_target_txt(t)}), "
-                          f"récupération {rec}, 10 min de retour au calme.",
-                          "Objectif : mémoriser l'allure, pas la dépasser."],
+        name = f"Goal pace {reps}x{dist / 1000:g} km"
+        return {"title": f"Goal pace — {reps} × {dist / 1000:g} km",
+                "lines": [f"15 min warm-up, {reps} × {dist / 1000:g} km at goal pace ({_target_txt(t)}), "
+                          f"{rec} recovery, 10 min cool-down.",
+                          "Aim: lock in the pace, not beat it."],
                 "spec": {"name": name, "steps": [_wu(profile), {"kind": "repeat", "times": reps, "steps": [
                     {"kind": "interval", "dist": dist, "target": t}, rec_step]}, _cd(profile)]}}
     if kind == "activation":
         pace = profile.race_pace()
         t = _pace(profile, "", pace) if pace else {"open": True}
-        return {"title": "Activation avant course",
-                "lines": [f"20 min faciles, puis 3 × 1 min à l'allure objectif ({_target_txt(t) or 'ressentie'}), 1 min de trot entre, 5 min faciles."],
+        return {"title": "Pre-race activation",
+                "lines": [f"20 min easy, then 3 × 1 min at goal pace ({_target_txt(t) or 'by feel'}), 1 min jog between, 5 min easy."],
                 "spec": {"name": "Activation", "steps": [{"kind": "interval", "dur": "20:00", "target": z2},
                                                          {"kind": "repeat", "times": 3, "steps": [
                                                              {"kind": "interval", "dur": "1:00", "target": t},
@@ -251,25 +251,25 @@ def session(kind: str, profile: Profile, volume: float, **kw: Any) -> dict[str, 
     if kind == "race":
         g = profile.goal
         pace = profile.race_pace()
-        lines = [f"Jour de course : {g.get('name', 'objectif')} ({g.get('distance_km', '?')} km)."]
+        lines = [f"Race day: {g.get('name', 'goal race')} ({g.get('distance_km', '?')} km)."]
         if pace:
-            lines.append(f"Allure cible {fmt_pace(pace)}/km ; partir 5 s/km plus lent sur les 2 premiers km.")
-        return {"title": "Course", "lines": lines, "spec": None}
-    raise CoachError(f"type de séance inconnu : {kind}")
+            lines.append(f"Target pace {fmt_pace(pace)}/km; start 5 s/km slower for the first 2 km.")
+        return {"title": "Race", "lines": lines, "spec": None}
+    raise CoachError(f"unknown session type: {kind}")
 
 
 def tsb_label(tsb: float | None) -> str:
     if tsb is None:
-        return "inconnue"
+        return "unknown"
     if tsb > 15:
-        return "très frais (désentraînement si cela dure)"
+        return "very fresh (detraining if it lasts)"
     if tsb > 5:
-        return "frais"
+        return "fresh"
     if tsb > -10:
-        return "équilibre"
+        return "balanced"
     if tsb > -25:
-        return "fatigue d'entraînement"
-    return "fatigue élevée"
+        return "training fatigue"
+    return "high fatigue"
 
 
 def _volume_target(profile: Profile, weekly: list[dict[str, Any]], d: date) -> float:
@@ -289,9 +289,9 @@ def _long_km(profile: Profile, volume: float, rows: list[dict[str, Any]], d: dat
               if r["sport"] == "run" and d - timedelta(days=28) <= date.fromisoformat(r["date"]) < d]
     base = max(10.0, 0.3 * volume)
     longest = max(recent, default=0.0)
-    if ph == "Affûtage":
+    if ph == "Taper":
         target = 0.65 * max(longest, base)
-    elif ph in ("Développement", "Spécifique"):
+    elif ph in ("Build", "Specific"):
         target = max(base, longest + 1) if longest else base
     else:
         target = max(base, longest)
@@ -317,8 +317,8 @@ def recommend(profile: Profile, rows: list[dict[str, Any]], daily: list[dict[str
     remaining_runs = rpw - len(wk)
     last_hard = max((date.fromisoformat(r["date"]) for r in before if r.get("kind") in ("quality", "long")), default=None)
     days_since_hard = (target - last_hard).days if last_hard else None
-    quality_target = 2 if rpw >= 5 and ph in ("Développement", "Spécifique") else 1
-    if ph in ("Récupération après course", "Semaine de course", "Jour de course"):
+    quality_target = 2 if rpw >= 5 and ph in ("Build", "Specific") else 1
+    if ph in ("Post-race recovery", "Race week", "Race day"):
         quality_target = 0
     last_quality = next((r for r in reversed(before) if r.get("kind") == "quality"), None)
     reasons: list[str] = []
@@ -341,66 +341,66 @@ def recommend(profile: Profile, rows: list[dict[str, Any]], daily: list[dict[str
 
     if not before:
         kind, kw = "easy", {"minutes": 40}
-        reasons.append("Aucune sortie enregistrée : commencer par un footing facile pour calibrer FC et allures.")
-    elif ph == "Jour de course":
+        reasons.append("No run recorded yet: start with an easy run to calibrate HR and paces.")
+    elif ph == "Race day":
         kind = "race"
-        reasons.append("C'est le jour de l'objectif.")
-    elif ph == "Récupération après course":
+        reasons.append("It is goal race day.")
+    elif ph == "Post-race recovery":
         if days_to_goal is not None and days_to_goal >= -3:
             kind = "rest"
-            reasons.append("Moins de 4 jours après la course : repos.")
+            reasons.append("Less than 4 days after the race: rest.")
         else:
             kind, kw = "recovery", {"minutes": 30}
-            reasons.append("Deux semaines de récupération après la course : footings courts seulement.")
+            reasons.append("Two weeks of recovery after the race: short easy runs only.")
     elif tsb is not None and tsb < -30:
         kind = "rest"
-        reasons.append(f"Fatigue élevée (TSB {tsb:+.0f}) : repos.")
+        reasons.append(f"High fatigue (TSB {tsb:+.0f}): rest.")
     elif plan_rows is not None:
         kind, kw = _from_plan(plan_rows, target, yesterday, tsb, profile, easy_pace_min, reasons)
     elif remaining_runs <= 0:
         kind = "rest"
-        reasons.append(f"Les {rpw} sorties prévues cette semaine sont faites.")
+        reasons.append(f"All {rpw} runs planned this week are done.")
     elif yesterday and any(r.get("kind") in ("quality", "long") for r in yesterday):
         kind, kw = ("rest", {}) if (tsb is not None and tsb < -20) else ("recovery", {"minutes": 30 if volume < 40 else 40})
-        reasons.append("Séance dure la veille : récupération.")
-    elif ph == "Semaine de course":
+        reasons.append("Hard session the day before: recovery.")
+    elif ph == "Race week":
         if days_to_goal in (2, 3):
             kind = "activation"
-            reasons.append(f"J-{days_to_goal} : activation courte pour garder du rythme sans fatigue.")
+            reasons.append(f"{days_to_goal} days to go: short activation to keep some rhythm without fatigue.")
         elif days_to_goal == 1:
             kind = "rest"
-            reasons.append("Veille de course : repos ou 15 min de trot.")
+            reasons.append("Day before the race: rest or a 15 min jog.")
         else:
             kind, kw = "easy", {"minutes": 30, "strides": True}
-            reasons.append("Semaine de course : volume réduit, intensité préservée par quelques accélérations.")
+            reasons.append("Race week: reduced volume, intensity kept with a few strides.")
     elif not long_done and target.weekday() >= profile.long_run_day:
         if tsb is not None and tsb < -20:
             kind, kw = "easy", {"minutes": easy_min}
-            reasons.append(f"Sortie longue repoussée : fatigue d'entraînement marquée (TSB {tsb:+.0f}).")
+            reasons.append(f"Long run postponed: marked training fatigue (TSB {tsb:+.0f}).")
         else:
             km = long_km
             kind, kw = "long", {"km": km}
             pace = profile.race_pace()
-            if ph == "Spécifique" and pace and (profile.goal_km or 0) >= 15:
+            if ph == "Specific" and pace and (profile.goal_km or 0) >= 15:
                 kw.update(finish_pace=pace, finish_km=float(min(8, round(km * 0.3))))
-            reasons.append("Sortie longue de la semaine pas encore faite, et c'est son jour.")
+            reasons.append("This week's long run is not done yet, and today is long-run day.")
     elif (quality_done < quality_target and (days_since_hard is None or days_since_hard >= 2)
           and (tsb is None or tsb >= -20) and (target + timedelta(days=1)).weekday() != profile.long_run_day):
         if ph == "Base":
             kind = "fartlek"
-        elif ph in ("Spécifique", "Affûtage"):
-            kind, kw = "race_pace", {"taper": ph == "Affûtage"}
-        elif last_quality and str(last_quality.get("structure", "")).startswith("Fractionné"):
+        elif ph in ("Specific", "Taper"):
+            kind, kw = "race_pace", {"taper": ph == "Taper"}
+        elif last_quality and str(last_quality.get("structure", "")).startswith("Intervals"):
             kind = "threshold"
         else:
-            kind = "vo2" if ph == "Développement" else "threshold"
-        since = f"il y a {days_since_hard} j" if days_since_hard is not None else "aucune récente"
-        reasons.append(f"Séance de qualité {quality_done + 1}/{quality_target} de la semaine (phase {ph.lower()}), dernière séance dure : {since}.")
+            kind = "vo2" if ph == "Build" else "threshold"
+        since = f"{days_since_hard} days ago" if days_since_hard is not None else "none recently"
+        reasons.append(f"Quality session {quality_done + 1}/{quality_target} of the week ({ph.lower()} phase), last hard session: {since}.")
     else:
-        kind, kw = "easy", {"minutes": easy_min, "strides": ph in ("Développement", "Spécifique") and quality_done == 0}
-        reasons.append("Footing pour construire le volume sans fatigue.")
+        kind, kw = "easy", {"minutes": easy_min, "strides": ph in ("Build", "Specific") and quality_done == 0}
+        reasons.append("Easy run to build volume without fatigue.")
         if (target + timedelta(days=1)).weekday() == profile.long_run_day and not long_done:
-            reasons.append("Sortie longue prévue demain : rester facile aujourd'hui.")
+            reasons.append("Long run planned tomorrow: keep today easy.")
 
     if kind == "plan":
         proposal = kw
@@ -418,32 +418,32 @@ def _from_plan(plan_rows: list[dict[str, Any]], target: date, yesterday: list[di
                profile: Profile, easy_pace_min: float, reasons: list[str]) -> tuple[str, dict[str, Any]]:
     for s in plan_rows:
         if s["status"] == "missed" and s.get("priority", 2) == 1:
-            reasons.append(f"Séance clé manquée le {day_fr(s['date'])} ({s.get('desc') or TYPE_FR[s.get('type', 'easy')]}) : "
-                           "la placer à la place de la prochaine séance facultative (priorité 3), à 48 h d'une autre séance dure ; "
-                           "ne jamais rattraper une séance facultative.")
+            reasons.append(f"Key session missed on {day_abbr(s['date'])} ({s.get('desc') or TYPE_LABELS[s.get('type', 'easy')]}): "
+                           "put it in place of the next optional session (priority 3), 48 h away from any other hard session; "
+                           "never make up an optional session.")
     todays = [s for s in plan_rows if s["date"] == target and s["status"] == "today"]
     upcoming = [s for s in plan_rows if s["date"] > target and s["status"] == "upcoming"]
     if not todays:
-        reasons.append("Rien au plan aujourd'hui.")
+        reasons.append("Nothing planned today.")
         if upcoming:
             nxt = upcoming[0]
-            reasons.append(f"Prochaine séance du plan : {day_fr(nxt['date'])} {nxt['date'].strftime('%d/%m')} — "
-                           f"{nxt.get('desc') or TYPE_FR[nxt.get('type', 'easy')]}.")
+            reasons.append(f"Next planned session: {day_abbr(nxt['date'])} {nxt['date'].strftime('%d %b')} — "
+                           f"{nxt.get('desc') or TYPE_LABELS[nxt.get('type', 'easy')]}.")
         else:
-            reasons.append("Toutes les séances de la semaine sont passées.")
+            reasons.append("All of this week's sessions are past.")
         return "rest", {}
     s = todays[0]
     stype = s.get("type", "easy")
     hard_yesterday = any(r.get("kind") in ("quality", "long") for r in yesterday)
     if stype in ("quality", "long") and tsb is not None and tsb < -25:
-        reasons.append(f"Séance du plan ({s.get('desc') or TYPE_FR[stype]}) remplacée par un footing : TSB {tsb:+.0f}. La décaler de 48 h.")
+        reasons.append(f"Planned session ({s.get('desc') or TYPE_LABELS[stype]}) replaced by an easy run: TSB {tsb:+.0f}. Move it 48 h later.")
         return "easy", {"minutes": 40}
     if stype == "quality" and hard_yesterday:
-        reasons.append("Séance dure hier : décaler la qualité du plan d'un jour et faire un footing de récupération.")
+        reasons.append("Hard session yesterday: move the planned quality session by one day and do a recovery run.")
         return "recovery", {"minutes": 30}
-    reasons.append(f"Séance prévue au plan (priorité {s.get('priority', 2)}).")
+    reasons.append(f"Session from the plan (priority {s.get('priority', 2)}).")
     if s.get("spec"):
-        return "plan", {"title": f"Plan — {s.get('desc') or TYPE_FR[stype]}", "lines": [s.get("desc", "")], "spec": s["spec"]}
+        return "plan", {"title": f"Plan — {s.get('desc') or TYPE_LABELS[stype]}", "lines": [s.get("desc", "")], "spec": s["spec"]}
     if stype == "long" and s.get("km"):
         built = session("long", profile, 0, km=float(s["km"]))
     elif stype == "easy" and s.get("km"):
@@ -452,19 +452,19 @@ def _from_plan(plan_rows: list[dict[str, Any]], target: date, yesterday: list[di
         built = session("rest", profile, 0)
     else:
         built = {"title": "", "lines": [], "spec": None}
-    built["title"] = f"Plan — {s.get('desc') or built['title'] or TYPE_FR[stype]}"
+    built["title"] = f"Plan — {s.get('desc') or built['title'] or TYPE_LABELS[stype]}"
     if s.get("desc"):
         built["lines"] = [s["desc"]] + [line for line in built["lines"] if line != s["desc"]]
     if not built.get("spec") and stype == "quality":
-        built["lines"].append("Pas de format montre dans le plan : l'agent l'écrit d'après la description (references/plan.md).")
+        built["lines"].append("No watch format in the plan: the agent writes it from the description (references/plan.md).")
     return "plan", built
 
 
 def render_plan_rows(plan_rows: list[dict[str, Any]]) -> list[str]:
-    lines = ["| Jour | Prévu | Priorité | Statut | Réalisé |", "|---|---|---|---|---|"]
+    lines = ["| Day | Planned | Priority | Status | Done |", "|---|---|---|---|---|"]
     for s in plan_rows:
         run = s.get("run")
         done = f"{run['distance_km']:g} km, {run['structure']}" if run else ""
-        lines.append(f"| {day_fr(s['date'])} {s['date'].strftime('%d/%m')} | {s.get('desc') or TYPE_FR[s.get('type', 'easy')]} | "
-                     f"{s.get('priority', 2)} | {STATUS_FR[s['status']]} | {done} |")
+        lines.append(f"| {day_abbr(s['date'])} {s['date'].strftime('%d %b')} | {s.get('desc') or TYPE_LABELS[s.get('type', 'easy')]} | "
+                     f"{s.get('priority', 2)} | {STATUS_LABELS[s['status']]} | {done} |")
     return lines

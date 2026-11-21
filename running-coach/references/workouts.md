@@ -1,23 +1,23 @@
-# Séances structurées sur la montre (Garmin Connect)
+# Structured workouts on the watch (Garmin Connect)
 
-Une séance créée dans Garmin Connect et planifiée au calendrier arrive sur la montre à la synchronisation suivante. Les autres marques ne sont pas prises en charge : leur donner la description texte.
+A workout created in Garmin Connect and scheduled on the calendar reaches the watch at the next sync. Other brands are not supported: give them the text description.
 
-## Commandes
-| Commande | Effet |
+## Commands
+| Command | Effect |
 |---|---|
-| `coach workout push <fichier.json \| -> --date AAAA-MM-JJ --dry-run` | valide, affiche le résumé et le JSON envoyé, n'envoie rien |
-| `coach workout push <fichier.json \| -> --date AAAA-MM-JJ` | crée la séance dans le compte puis la planifie ; sans `--date`, elle reste dans la bibliothèque |
-| `coach workout list` | séances du compte (id, nom) |
-| `coach workout delete <id>` | supprime une séance du compte |
-| `coach next --spec` | séance proposée par `coach next`, au format ci-dessous |
+| `coach workout push <file.json \| -> --date YYYY-MM-DD --dry-run` | validates, shows the summary and the JSON that would be sent, sends nothing |
+| `coach workout push <file.json \| -> --date YYYY-MM-DD` | creates the workout in the account then schedules it; without `--date`, it stays in the library |
+| `coach workout list` | workouts in the account (id, name) |
+| `coach workout delete <id>` | deletes a workout from the account |
+| `coach next --spec` | the workout proposed by `coach next`, in the format below |
 
-Toujours `--dry-run` d'abord, montrer le résumé à l'utilisateur et n'envoyer qu'après son accord : la commande écrit dans son compte.
+Always `--dry-run` first, show the summary to the user and send only after their agreement: the command writes to their account.
 
 ## Format
 ```json
 {
-  "name": "VMA 6x800m",
-  "description": "Bloc VMA",
+  "name": "VO2max 6x800m",
+  "description": "VO2max block",
   "steps": [
     {"kind": "warmup", "dur": "15:00", "target": {"hr": [110, 145]}},
     {"kind": "repeat", "times": 6, "steps": [
@@ -29,13 +29,13 @@ Toujours `--dry-run` d'abord, montrer le résumé à l'utilisateur et n'envoyer 
 }
 ```
 
-| Élément | Valeurs |
+| Element | Values |
 |---|---|
-| `kind` | `warmup`, `cooldown`, `interval` (effort, ou course continue), `recovery`, `rest`, `repeat` |
-| fin d'étape, exactement une | `dur` (`"mm:ss"`, `"h:mm:ss"` ou secondes), `dist` (mètres), `lap` (`true` : jusqu'à l'appui sur Tour) |
-| `target`, facultatif | `{"pace": ["m:ss", "m:ss"]}` en min/km, dans n'importe quel ordre ; `{"hr": [bas, haut]}` en bpm ; `{"open": true}` ou absent : libre |
-| `repeat` | `times` (entier ≥ 1) et `steps` ; pas de `repeat` dans un `repeat` |
+| `kind` | `warmup`, `cooldown`, `interval` (effort, or continuous running), `recovery`, `rest`, `repeat` |
+| step end, exactly one | `dur` (`"mm:ss"`, `"h:mm:ss"` or seconds), `dist` (metres), `lap` (`true`: until the Lap button is pressed) |
+| `target`, optional | `{"pace": ["m:ss", "m:ss"]}` in min/km, in any order; `{"hr": [low, high]}` in bpm; `{"open": true}` or absent: open |
+| `repeat` | `times` (integer ≥ 1) and `steps`; no `repeat` inside a `repeat` |
 
-- Cibles tirées de `coach profile` : FC de la zone visée, allures de la table.
-- Une fourchette d'allure de 10 s/km évite que la montre sonne sans arrêt ; une cible FC convient mieux aux footings et aux sorties longues.
-- Une sortie longue s'écrit en une étape `interval` avec `dist` et une cible FC de Z2 ; une fin à allure objectif en seconde étape.
+- Targets taken from `coach profile`: HR of the targeted zone, paces from the table.
+- A 10 s/km pace range keeps the watch from beeping constantly; an HR target suits easy runs and long runs better.
+- A long run is written as one `interval` step with `dist` and a Z2 HR target; a goal-pace finish as a second step.

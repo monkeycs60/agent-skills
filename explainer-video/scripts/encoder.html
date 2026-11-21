@@ -1,6 +1,6 @@
 <!doctype html>
-<html><head><meta charset="utf-8"><title>encodeur</title></head>
-<body style="background:#111;color:#ddd;font:14px monospace"><div id="log">encodage...</div>
+<html><head><meta charset="utf-8"><title>encoder</title></head>
+<body style="background:#111;color:#ddd;font:14px monospace"><div id="log">encoding...</div>
 <script>
 const q = new URLSearchParams(location.search);
 const N = +q.get('n'), FPS = +q.get('fps'), OUT = q.get('out');
@@ -40,7 +40,7 @@ function moov(desc, sizes, keys, offset) {
 const cv = new OffscreenCanvas(W, H);
 const cx = cv.getContext('2d', { willReadFrequently: true });
 const YUV = new Uint8Array(W * H * 3 / 2);
-function versI420(img) {
+function toI420(img) {
   cx.drawImage(img, 0, 0);
   const d = cx.getImageData(0, 0, W, H).data, U0 = W * H, V0 = U0 + W * H / 4;
   for (let p = 0, i = 0; p < W * H; p++, i += 4) YUV[p] = (16 + (46.559 * d[i] + 156.629 * d[i + 1] + 15.812 * d[i + 2]) / 255 + .5) | 0;
@@ -53,7 +53,7 @@ function versI420(img) {
   }
   return YUV;
 }
-const ESPACE = { primaries: 'bt709', transfer: 'bt709', matrix: 'bt709', fullRange: false };
+const COLOR_SPACE = { primaries: 'bt709', transfer: 'bt709', matrix: 'bt709', fullRange: false };
 
 window.ENCODE = (async () => {
   const log = (m) => { document.getElementById('log').textContent = m; };
@@ -62,33 +62,33 @@ window.ENCODE = (async () => {
     const c = { codec, width: W, height: H, bitrate: 6_000_000, framerate: FPS, avc: { format: 'avc' }, bitrateMode: 'variable', latencyMode: 'quality' };
     try { const s = await VideoEncoder.isConfigSupported(c); if (s.supported) { cfg = c; break; } } catch (e) {}
   }
-  if (!cfg) return { ok: false, err: 'aucun encodeur H.264 dans ce navigateur' };
+  if (!cfg) return { ok: false, err: 'no H.264 encoder in this browser' };
 
-  const chunks = []; let desc = null, erreur = null;
+  const chunks = []; let desc = null, failure = null;
   const enc = new VideoEncoder({
     output: (chunk, meta) => {
       if (!desc && meta && meta.decoderConfig && meta.decoderConfig.description) desc = new Uint8Array(meta.decoderConfig.description);
       const b = new Uint8Array(chunk.byteLength); chunk.copyTo(b);
       chunks.push({ b, ts: chunk.timestamp, key: chunk.type === 'key' });
     },
-    error: (e) => { erreur = e.message; }
+    error: (e) => { failure = e.message; }
   });
   enc.configure(cfg);
   for (let i = 0; i < N; i++) {
-    if (erreur) break;
+    if (failure) break;
     const r = await fetch('/frames/f' + String(i).padStart(5, '0') + '.jpg');
-    if (!r.ok) return { ok: false, err: 'image manquante ' + i };
+    if (!r.ok) return { ok: false, err: 'missing frame ' + i };
     const bmp = await createImageBitmap(await r.blob());
-    const fr = new VideoFrame(versI420(bmp), { format: 'I420', codedWidth: W, codedHeight: H, colorSpace: ESPACE, timestamp: Math.round(i * 1e6 / FPS), duration: Math.round(1e6 / FPS) });
+    const fr = new VideoFrame(toI420(bmp), { format: 'I420', codedWidth: W, codedHeight: H, colorSpace: COLOR_SPACE, timestamp: Math.round(i * 1e6 / FPS), duration: Math.round(1e6 / FPS) });
     enc.encode(fr, { keyFrame: i % (FPS * 2) === 0 });
     fr.close(); bmp.close();
     while (enc.encodeQueueSize > 6) await new Promise(r => setTimeout(r, 2));
-    if (i % 60 === 0) log('image ' + i + ' / ' + N);
+    if (i % 60 === 0) log('frame ' + i + ' / ' + N);
   }
   await enc.flush(); enc.close();
-  if (erreur) return { ok: false, err: erreur };
-  if (!desc) return { ok: false, err: 'configuration avcC absente' };
-  for (let i = 1; i < chunks.length; i++) if (chunks[i].ts <= chunks[i - 1].ts) return { ok: false, err: 'images B detectees, ordre non monotone en ' + i };
+  if (failure) return { ok: false, err: failure };
+  if (!desc) return { ok: false, err: 'avcC configuration missing' };
+  for (let i = 1; i < chunks.length; i++) if (chunks[i].ts <= chunks[i - 1].ts) return { ok: false, err: 'B-frames detected, non-monotonic order at ' + i };
 
   const sizes = chunks.map(c => c.b.length);
   const keys = chunks.map((c, i) => c.key ? i + 1 : 0).filter(Boolean);
@@ -98,7 +98,7 @@ window.ENCODE = (async () => {
   mv = moov(desc, sizes, keys, ftyp.length + mv.length + 8);
   const blob = new Blob([ftyp, mv, u32(dataLen + 8), enc8('mdat'), ...chunks.map(c => c.b)], { type: 'video/mp4' });
   const rep = await fetch('/save?f=' + encodeURIComponent(OUT), { method: 'POST', body: blob });
-  log('termine');
-  return { ok: rep.ok, codec: cfg.codec, images: chunks.length, cles: keys.length, octets: blob.size, moSec: +(blob.size / 1e6).toFixed(2) };
+  log('done');
+  return { ok: rep.ok, codec: cfg.codec, frames: chunks.length, keyframes: keys.length, bytes: blob.size, mb: +(blob.size / 1e6).toFixed(2) };
 })();
 </script></body></html>

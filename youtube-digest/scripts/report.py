@@ -13,6 +13,9 @@ import unicodedata
 import urllib.request
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import transcript as T
+
 DATA = Path.home() / ".local" / "share" / "youtube"
 CACHE = Path.home() / ".cache" / "youtube-skill"
 MERMAID = CACHE / "mermaid.min.js"
@@ -23,11 +26,44 @@ CHROME_APPS = (
     "/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge",
 )
 MERMAID_CDN = "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"
-VERDICTS = {"regarder": ("À regarder", "go"), "survoler": ("À survoler", "mid"), "passer": ("À passer", "stop")}
-COMMENT_KINDS = {
-    "correction": "Correction", "alerte": "Mise en garde", "alternative": "Alternative",
-    "question": "Question ouverte", "avis": "Avis",
+TONES = {"watch": "go", "skim": "mid", "skip": "stop"}
+LABELS = {
+    "en": {
+        "ratings": {"watch": "Watch it", "skim": "Skim it", "skip": "Skip it"},
+        "kinds": {"correction": "Correction", "warning": "Warning", "alternative": "Alternative",
+                  "question": "Open question", "opinion": "Opinion"},
+        "verdict": "Verdict", "key_points": "Key points", "diagrams": "Diagrams", "steps": "Step by step",
+        "resources": "Resources", "read": "read", "comments": "What the comments say",
+        "no_comments": "Comments not analysed.", "blind_spots": "Blind spots", "likes": "{n} likes",
+        "copy": "Copy", "copied": "Copied", "selected": "Selected: Ctrl+C",
+        "full_transcript": "Full transcript · {words} words", "description": "Video description",
+        "top_comments": "The {n} most-liked comments", "transcript": "Transcript", "appendix": "Appendix",
+        "kicker": "Video report", "report": "report", "transcript_file": "transcript", "open": "Open on YouTube",
+    },
+    "fr": {
+        "ratings": {"watch": "À regarder", "skim": "À survoler", "skip": "À passer"},
+        "kinds": {"correction": "Correction", "warning": "Mise en garde", "alternative": "Alternative",
+                  "question": "Question ouverte", "opinion": "Avis"},
+        "verdict": "Verdict", "key_points": "Points clés", "diagrams": "Schémas", "steps": "Pas à pas",
+        "resources": "Ressources", "read": "lu", "comments": "Ce que disent les commentaires",
+        "no_comments": "Commentaires non analysés.", "blind_spots": "Angles morts", "likes": "{n} j’aime",
+        "copy": "Copier", "copied": "Copié", "selected": "Sélectionné : Ctrl+C",
+        "full_transcript": "Transcription complète · {words} mots", "description": "Description de la vidéo",
+        "top_comments": "Les {n} commentaires les plus appréciés", "transcript": "Transcription",
+        "appendix": "Annexes", "kicker": "Rapport de vidéo", "report": "rapport", "transcript_file": "transcription",
+        "open": "Ouvrir sur YouTube",
+    },
 }
+LEGACY_KEYS = {
+    "en_une_phrase": "summary", "points_cles": "key_points", "schemas": "diagrams", "etapes": "steps",
+    "ressources": "resources", "commentaires": "comments", "angles_morts": "blind_spots", "avis": "rating",
+    "texte": "text", "titre": "title", "legende": "caption", "langage": "language", "apport": "adds", "lu": "read",
+    "resume": "summary", "auteur": "author", "ordre": "order", "a_retenir": "takeaways", "comparatif": "comparison",
+    "colonnes": "columns", "lignes": "rows", "valeurs": "values", "manques": "gaps",
+}
+LEGACY_RATINGS = {"regarder": "watch", "survoler": "skim", "passer": "skip"}
+LEGACY_KINDS = {"alerte": "warning", "avis": "opinion"}
+TRANSCRIPT_SECTIONS = {L[key]: key for L in T.LABELS.values() for key in ("links", "description", "transcript", "comments")}
 
 
 def esc(text):
@@ -57,37 +93,91 @@ def slug(text):
     return re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")[:60] or "video"
 
 
+def labelled(line, key):
+    for L in T.LABELS.values():
+        prefix = f"- {L[key]}{L['sep']}"
+        if line.startswith(prefix):
+            return line[len(prefix):].strip()
+    return None
+
+
 def parse_transcript(path):
-    doc = {"title": "", "meta": "", "link": "", "source": "", "links": [], "description": "",
-           "blocks": [], "comments": []}
+    doc = {"title": "", "meta": "", "channel": None, "date": "", "duration": "", "link": "", "source": "",
+           "links": [], "description": "", "blocks": [], "comments": []}
     section = None
     desc = []
     for line in path.read_text(encoding="utf-8").splitlines():
         if line.startswith("# ") and not doc["title"]:
             doc["title"] = line[2:].strip()
-        elif line.startswith("- Chaîne : ") and section is None:
+        elif section is None and (value := labelled(line, "channel")) is not None:
             doc["meta"] = line[2:].strip()
-        elif line.startswith("- Lien : ") and section is None:
-            doc["link"] = line[9:].strip()
-        elif line.startswith("- Texte : ") and section is None:
-            doc["source"] = line[10:].strip()
+            parts = value.rsplit(" · ", 2)
+            if len(parts) == 3:
+                doc["channel"] = parts[0]
+                doc["date"], doc["duration"] = (p.split(":", 1)[-1].strip() for p in parts[1:])
+        elif section is None and (value := labelled(line, "link")) is not None:
+            doc["link"] = value
+        elif section is None and (value := labelled(line, "text")) is not None:
+            doc["source"] = value
         elif line.startswith("## "):
-            section = line[3:].split(" (")[0].strip()
-        elif section == "Liens utiles" and line.startswith("- "):
-            kind, _, url = line[2:].partition(" : ")
-            doc["links"].append((kind, url.strip()))
-        elif section == "Description":
+            name = line[3:].split(" (")[0].strip()
+            section = TRANSCRIPT_SECTIONS.get(name, name)
+        elif section == "links" and line.startswith("- "):
+            kind, _, url = line[2:].partition(":")
+            doc["links"].append((kind.strip(), url.strip()))
+        elif section == "description":
             desc.append(line)
-        elif section == "Transcription":
+        elif section == "transcript":
             m = re.match(r"^(###|\*\*)\s*\[(\d[\d:]*)\]\(https?://\S+?t=(\d+)\)(?:\*\*)?\s*(.*)$", line)
             if m:
                 doc["blocks"].append(("h" if m.group(1) == "###" else "p", int(m.group(3)), m.group(4)))
-        elif section == "Commentaires les plus appréciés" and line.startswith("- **"):
-            m = re.match(r"^- \*\*(.+?)\*\* \((.*?)\) : (.*)$", line)
+        elif section == "comments" and line.startswith("- **"):
+            m = re.match(r"^- \*\*(.+?)\*\* \((.*?)\) ?: (.*)$", line)
             if m:
                 doc["comments"].append(m.groups())
     doc["description"] = "\n".join(desc).strip()
     return doc
+
+
+def meta_line(doc, lang):
+    if doc["channel"] is None:
+        return doc["meta"]
+    return T.meta_line(T.LABELS[lang], doc["channel"], doc["date"], doc["duration"])
+
+
+def source_label(source, lang):
+    for L in T.LABELS.values():
+        if source == L["local"]:
+            return T.LABELS[lang]["local"]
+        for kind in ("auto", "manual"):
+            head, _, tail = L[kind].partition("{key}")
+            if source.startswith(head) and source.endswith(tail) and len(source) > len(head) + len(tail):
+                return T.LABELS[lang][kind].format(key=source[len(head):len(source) - len(tail)])
+    return source
+
+
+def from_legacy(value):
+    if isinstance(value, dict):
+        return {LEGACY_KEYS.get(k, k): from_legacy(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [from_legacy(v) for v in value]
+    return value
+
+
+def load_notes(*paths):
+    path = next((p for p in paths if p.exists()), None)
+    if path is None:
+        return None
+    raw = json.loads(path.read_text(encoding="utf-8"))
+    notes = from_legacy(raw)
+    if notes.get("lang") not in LABELS:
+        notes["lang"] = "fr" if "en_une_phrase" in raw else "en"
+    verdict = notes.get("verdict") or {}
+    if verdict.get("rating") in LEGACY_RATINGS:
+        verdict["rating"] = LEGACY_RATINGS[verdict["rating"]]
+    for c in (notes.get("comments") or {}).get("points") or []:
+        c["type"] = LEGACY_KINDS.get(c.get("type"), c.get("type"))
+    return notes
 
 
 def find_chrome():
@@ -125,7 +215,7 @@ def ensure_mermaid():
         MERMAID.write_bytes(urllib.request.urlopen(MERMAID_CDN, timeout=30).read())
         return True
     except Exception as e:
-        print(f"Mermaid indisponible ({e}) : schémas laissés en source.", file=sys.stderr)
+        print(f"Mermaid unavailable ({e}): diagrams left as source.", file=sys.stderr)
         return False
 
 
@@ -174,81 +264,83 @@ def host_label(url):
     return re.sub(r"^https?://(www\.)?", "", url).split("/")[0]
 
 
-def likes_label(comment):
-    return f" · {int(comment['likes'])} j’aime" if comment.get("likes") is not None else ""
+def likes_label(comment, L):
+    return f" · {L['likes'].format(n=int(comment['likes']))}" if comment.get("likes") is not None else ""
 
 
-def fiche_sections(fiche, video_id, svgs, prefix=""):
+def notes_sections(notes, video_id, svgs, L, prefix=""):
     ts = lambda t: f'<a class="ts" href="https://youtu.be/{video_id}?t={int(t)}" target="_blank" rel="noopener">{clock(t)}</a>'
-    schemas = fiche.get("schemas") or []
+    diagrams = notes.get("diagrams") or []
     sections = []
 
-    verdict = fiche.get("verdict") or {}
-    label, tone = VERDICTS.get(verdict.get("avis"), ("Verdict", "mid"))
+    verdict = notes.get("verdict") or {}
+    rating = verdict.get("rating")
+    label, tone = (L["ratings"][rating], TONES[rating]) if rating in TONES else (L["verdict"], "mid")
     moments = "".join(f'<li>{ts(m["t"])} {inline(m.get("label"))}</li>' for m in verdict.get("moments") or [])
-    sections.append((f"{prefix}verdict", "Verdict", f"""
-<div class="verdict {tone}"><span class="badge">{label}</span><p>{inline(verdict.get("texte"))}</p>
+    sections.append((f"{prefix}verdict", L["verdict"], f"""
+<div class="verdict {tone}"><span class="badge">{label}</span><p>{inline(verdict.get("text"))}</p>
 {f'<ul class="moments">{moments}</ul>' if moments else ''}</div>"""))
 
-    if fiche.get("points_cles"):
-        cards = "".join(f'<li class="card">{ts(p["t"]) if p.get("t") is not None else ""}<h3>{inline(p.get("titre"))}</h3>'
-                        f'<p>{inline(p.get("texte"))}</p></li>' for p in fiche["points_cles"])
-        sections.append((f"{prefix}points", "Points clés", f'<ol class="points">{cards}</ol>'))
+    if notes.get("key_points"):
+        cards = "".join(f'<li class="card">{ts(p["t"]) if p.get("t") is not None else ""}<h3>{inline(p.get("title"))}</h3>'
+                        f'<p>{inline(p.get("text"))}</p></li>' for p in notes["key_points"])
+        sections.append((f"{prefix}points", L["key_points"], f'<ol class="points">{cards}</ol>'))
 
-    if schemas:
+    if diagrams:
         figs = []
-        for s, svg in zip(schemas, svgs):
+        for s, svg in zip(diagrams, svgs):
             body = f'<div class="svg">{svg}</div>' if svg else f'<pre class="mermaid-src">{esc(s["mermaid"])}</pre>'
-            caption = f'<figcaption>{inline(s.get("legende"))}</figcaption>' if s.get("legende") else ""
-            figs.append(f'<figure class="schema"><h3>{inline(s.get("titre"))}</h3>{body}{caption}</figure>')
-        sections.append((f"{prefix}schemas", "Schémas", "".join(figs)))
+            caption = f'<figcaption>{inline(s.get("caption"))}</figcaption>' if s.get("caption") else ""
+            figs.append(f'<figure class="schema"><h3>{inline(s.get("title"))}</h3>{body}{caption}</figure>')
+        sections.append((f"{prefix}diagrams", L["diagrams"], "".join(figs)))
 
-    if fiche.get("etapes"):
+    if notes.get("steps"):
         steps = []
-        for e in fiche["etapes"]:
-            code = (f'<div class="codeblock"><button class="copy" type="button">Copier</button>'
+        for e in notes["steps"]:
+            code = (f'<div class="codeblock"><button class="copy" type="button">{L["copy"]}</button>'
                     f'<pre><code>{esc(e["code"])}</code></pre></div>') if e.get("code") else ""
             when = ts(e["t"]) if e.get("t") is not None else ""
-            steps.append(f'<li><div class="step-head"><h3>{inline(e.get("titre"))}</h3>{when}</div>'
-                         f'<p>{inline(e.get("texte"))}</p>{code}</li>')
-        sections.append((f"{prefix}etapes", "Pas à pas", f'<ol class="steps">{"".join(steps)}</ol>'))
+            steps.append(f'<li><div class="step-head"><h3>{inline(e.get("title"))}</h3>{when}</div>'
+                         f'<p>{inline(e.get("text"))}</p>{code}</li>')
+        sections.append((f"{prefix}steps", L["steps"], f'<ol class="steps">{"".join(steps)}</ol>'))
 
-    if fiche.get("ressources"):
+    if notes.get("resources"):
         items = "".join(
-            f'<li><a href="{esc(r["url"])}" target="_blank" rel="noopener">{inline(r.get("titre") or r["url"])}</a>'
-            + ('<span class="lu">lu</span>' if r.get("lu") else "")
-            + f'<span class="host">{esc(host_label(r["url"]))}</span><p>{inline(r.get("apport"))}</p></li>'
-            for r in fiche["ressources"])
-        sections.append((f"{prefix}ressources", "Ressources", f'<ul class="resources">{items}</ul>'))
+            f'<li><a href="{esc(r["url"])}" target="_blank" rel="noopener">{inline(r.get("title") or r["url"])}</a>'
+            + (f'<span class="read">{L["read"]}</span>' if r.get("read") else "")
+            + f'<span class="host">{esc(host_label(r["url"]))}</span><p>{inline(r.get("adds"))}</p></li>'
+            for r in notes["resources"])
+        sections.append((f"{prefix}resources", L["resources"], f'<ul class="resources">{items}</ul>'))
 
-    com = fiche.get("commentaires") or {}
+    com = notes.get("comments") or {}
     points = "".join(
-        f'<li><span class="kind {esc(c.get("type"))}">{COMMENT_KINDS.get(c.get("type"), "Avis")}</span>'
-        f'<p>{inline(c.get("texte"))}</p><span class="who">{esc(c.get("auteur"))}{likes_label(c)}</span></li>'
+        f'<li><span class="kind {esc(c.get("type"))}">{L["kinds"].get(c.get("type"), L["kinds"]["opinion"])}</span>'
+        f'<p>{inline(c.get("text"))}</p><span class="who">{esc(c.get("author"))}{likes_label(c, L)}</span></li>'
         for c in com.get("points") or [])
-    sections.append((f"{prefix}commentaires", "Ce que disent les commentaires",
-                     f'<p class="lead">{inline(com.get("resume") or "Commentaires non analysés.")}</p>'
+    sections.append((f"{prefix}comments", L["comments"],
+                     f'<p class="lead">{inline(com.get("summary") or L["no_comments"])}</p>'
                      f'{f"<ul class=comments>{points}</ul>" if points else ""}'))
 
-    if fiche.get("angles_morts"):
-        blind = "".join(f'<li>{ts(a["t"]) if a.get("t") is not None else ""} {inline(a.get("texte"))}</li>'
-                        for a in fiche["angles_morts"])
-        sections.append((f"{prefix}angles", "Angles morts", f'<ul class="blind">{blind}</ul>'))
+    if notes.get("blind_spots"):
+        blind = "".join(f'<li>{ts(a["t"]) if a.get("t") is not None else ""} {inline(a.get("text"))}</li>'
+                        for a in notes["blind_spots"])
+        sections.append((f"{prefix}blind-spots", L["blind_spots"], f'<ul class="blind">{blind}</ul>'))
 
     return sections
 
 
 def build(video_id):
     folder = DATA / video_id
-    fiche_path = folder / "fiche.json"
-    if not fiche_path.exists():
-        sys.exit(f"{fiche_path} manquant : écrire la fiche avant le rapport.")
-    fiche = json.loads(fiche_path.read_text(encoding="utf-8"))
+    notes = load_notes(folder / "notes.json", folder / "fiche.json")
+    if notes is None:
+        sys.exit(f"{folder / 'notes.json'} missing: write the notes before the report.")
+    lang = notes["lang"]
+    L = LABELS[lang]
     doc = parse_transcript(folder / "transcript.md")
     ts = lambda t: f'<a class="ts" href="https://youtu.be/{video_id}?t={int(t)}" target="_blank" rel="noopener">{clock(t)}</a>'
 
-    svgs = render_mermaid([sc["mermaid"] for sc in fiche.get("schemas") or []])
-    sections = fiche_sections(fiche, video_id, svgs)
+    svgs = render_mermaid([sc["mermaid"] for sc in notes.get("diagrams") or []])
+    sections = notes_sections(notes, video_id, svgs, L)
 
     transcript = []
     for kind, start, text in doc["blocks"]:
@@ -257,34 +349,34 @@ def build(video_id):
     raw_comments = "".join(f'<li><strong>{esc(a)}</strong> <span class="who">{esc(tags)}</span><p>{esc(t)}</p></li>'
                            for a, tags, t in doc["comments"])
     annexes = (
-        f'<details id="transcription"><summary>Transcription complète · {words} mots</summary>'
+        f'<details id="transcript"><summary>{L["full_transcript"].format(words=words)}</summary>'
         f'<div class="transcript">{"".join(transcript)}</div></details>'
-        f'<details><summary>Description de la vidéo</summary><div class="description">{linkify(doc["description"])}</div></details>'
-        + (f'<details><summary>Les {len(doc["comments"])} commentaires les plus appréciés</summary>'
+        f'<details><summary>{L["description"]}</summary><div class="description">{linkify(doc["description"])}</div></details>'
+        + (f'<details><summary>{L["top_comments"].format(n=len(doc["comments"]))}</summary>'
            f'<ul class="raw-comments">{raw_comments}</ul></details>' if raw_comments else "")
     )
 
     thumb = thumbnail(video_id)
-    nav = "".join(f'<a href="#{sid}">{title}</a>' for sid, title, _ in sections) + '<a href="#transcription">Transcription</a>'
+    nav = "".join(f'<a href="#{sid}">{title}</a>' for sid, title, _ in sections) + f'<a href="#transcript">{L["transcript"]}</a>'
     body = "".join(f'<section id="{sid}"><h2>{title}</h2>{content}</section>' for sid, title, content in sections)
     page = f"""<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{esc(doc["title"])} · rapport</title>
+<html lang="{lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{esc(doc["title"])} · {L["report"]}</title>
 <style>{CSS}</style></head>
 <body><header class="hero">
 {f'<img class="thumb" src="{thumb}" alt="">' if thumb else ''}
-<div><p class="kicker">Rapport de vidéo</p><h1>{esc(doc["title"])}</h1>
-<p class="meta">{esc(doc["meta"])}</p>
-<p class="one-liner">{inline(fiche.get("en_une_phrase"))}</p>
-<p class="links"><a href="{esc(doc["link"])}" target="_blank" rel="noopener">Ouvrir sur YouTube</a><span>{esc(doc["source"])}</span></p></div>
+<div><p class="kicker">{L["kicker"]}</p><h1>{esc(doc["title"])}</h1>
+<p class="meta">{esc(meta_line(doc, lang))}</p>
+<p class="one-liner">{inline(notes.get("summary"))}</p>
+<p class="links"><a href="{esc(doc["link"])}" target="_blank" rel="noopener">{L["open"]}</a><span>{esc(source_label(doc["source"], lang))}</span></p></div>
 </header>
 <nav>{nav}</nav>
-<main>{body}<section class="annexes"><h2>Annexes</h2>{annexes}</section></main>
-<script>{COPY_JS}</script>
+<main>{body}<section class="annexes"><h2>{L["appendix"]}</h2>{annexes}</section></main>
+<script>{copy_js(L)}</script>
 </body></html>"""
-    out = folder / "rapport.html"
+    out = folder / "report.html"
     out.write_text(page, encoding="utf-8")
-    return out, doc, sum(1 for s in svgs if s), sum(1 for s in svgs if not s)
+    return out, doc, L, sum(1 for s in svgs if s), sum(1 for s in svgs if not s)
 
 
 CSS = """
@@ -334,9 +426,9 @@ border:1px solid var(--line);border-radius:7px;padding:4px 10px;cursor:pointer}
 .resources,.comments,.blind,.raw-comments{list-style:none;padding:0;margin:0;display:grid;gap:10px}
 .resources li,.comments li{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 16px}
 .resources p,.comments p{margin:6px 0 0}.host{margin-left:10px;color:var(--muted);font-size:13px}
-.lu{margin-left:10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--go);background:var(--go-soft);padding:2px 7px;border-radius:5px}
+.read{margin-left:10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--go);background:var(--go-soft);padding:2px 7px;border-radius:5px}
 .lead{margin:0 0 12px}.kind{font-size:12px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent)}
-.kind.correction,.kind.alerte{background:var(--mid-soft);color:var(--mid)}.kind.alternative{background:var(--go-soft);color:var(--go)}
+.kind.correction,.kind.warning{background:var(--mid-soft);color:var(--mid)}.kind.alternative{background:var(--go-soft);color:var(--go)}
 .who{color:var(--muted);font-size:13px}
 .blind li{background:var(--mid-soft);border-radius:12px;padding:10px 14px}
 .annexes details{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:10px}
@@ -354,7 +446,7 @@ document.addEventListener('click', async (event) => {
   if (!button) return;
   const code = button.parentElement.querySelector('code');
   const text = code.innerText;
-  let label = 'Copié';
+  let label = COPIED;
   try {
     await navigator.clipboard.writeText(text);
   } catch {
@@ -371,25 +463,27 @@ document.addEventListener('click', async (event) => {
       range.selectNodeContents(code);
       getSelection().removeAllRanges();
       getSelection().addRange(range);
-      label = 'Sélectionné : Ctrl+C';
+      label = SELECTED;
     }
   }
   button.textContent = label;
   button.classList.add('done');
-  setTimeout(() => { button.textContent = 'Copier'; button.classList.remove('done'); }, 1800);
+  setTimeout(() => { button.textContent = COPY; button.classList.remove('done'); }, 1800);
 });
 """
 
-def deliver(out, doc, video_id, mode):
+
+def copy_js(L):
+    labels = {"COPY": L["copy"], "COPIED": L["copied"], "SELECTED": L["selected"]}
+    return "".join(f"const {k} = {json.dumps(v, ensure_ascii=False)};\n" for k, v in labels.items()) + COPY_JS
+
+
+def deliver(out, doc, video_id, mode, L):
     transcript = DATA / video_id / "transcript.md"
     name = slug(doc["title"])
-    if mode == "pupitre":
-        report_copy = Path(tempfile.gettempdir()) / f"youtube-{name}-rapport.html"
-        transcript_copy = Path(tempfile.gettempdir()) / f"youtube-{name}-transcription.md"
-    else:
-        downloads = Path.home() / "Downloads"
-        report_copy = downloads / f"youtube-{name}-rapport.html"
-        transcript_copy = downloads / f"youtube-{name}-transcription.md"
+    target = Path(tempfile.gettempdir()) if mode == "pupitre" else Path.home() / "Downloads"
+    report_copy = target / f"youtube-{name}-{L['report']}.html"
+    transcript_copy = target / f"youtube-{name}-{L['transcript_file']}.md"
     shutil.copy(out, report_copy)
     shutil.copy(transcript, transcript_copy)
     if mode == "downloads":
@@ -400,13 +494,13 @@ def deliver(out, doc, video_id, mode):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("video_id")
-    ap.add_argument("--deliver", choices=["pupitre", "downloads"], help="copier les deux fichiers à livrer")
+    ap.add_argument("--deliver", choices=["pupitre", "downloads"], help="copy the two files to deliver")
     a = ap.parse_args()
-    out, doc, ok, failed = build(a.video_id)
+    out, doc, L, ok, failed = build(a.video_id)
     result = {"report": str(out), "title": doc["title"], "schemas_rendered": ok, "schemas_failed": failed,
               "size_kb": round(out.stat().st_size / 1024)}
     if a.deliver:
-        report_copy, transcript_copy = deliver(out, doc, a.video_id, a.deliver)
+        report_copy, transcript_copy = deliver(out, doc, a.video_id, a.deliver, L)
         result.update({"report_copy": str(report_copy), "transcript_copy": str(transcript_copy)})
     print(json.dumps(result, ensure_ascii=False))
 

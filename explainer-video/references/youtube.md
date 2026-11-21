@@ -1,68 +1,69 @@
-# Kit de publication YouTube
+# YouTube publishing kit
 
-Règle : pour **chaque** vidéo destinée à YouTube, une miniature parfaite, un titre et une
-description optimisés pour la recherche YouTube, « épurés et quali », réunis dans un HTML. Le kit
-se fabrique **après** la vidéo validée et ne la modifie jamais.
+Rule: for **every** video meant for YouTube, a perfect thumbnail, a title and a description
+optimized for YouTube search, clean and high quality, gathered in one HTML page. The kit is made
+**after** the video is approved and never changes it.
 
-## Fichiers
+## Files
 
-| Fichier | Rôle |
+| File | Role |
 |---|---|
-| `miniature.html` (dossier du film, copié depuis `modele/`) | La miniature, 1280 x 720, dessinée en HTML comme le film |
-| `youtube-<lang>.json` (dossier du film) | Titre, description, tags, réglages, `chaine` (nom affiché dans les aperçus, sinon `--nom` de la charte) |
-| `out/<film>-<lang>-miniature.jpg` et `.png` | `render.js <film> miniature <lang>` |
-| `out/kit-youtube-<lang>.html` | `kit.js <film> <lang>` : aperçus, boutons Copier, contrôles automatiques |
+| `thumbnail.html` (film folder, copied from `template/`) | The thumbnail, 1280 x 720, drawn in HTML like the film |
+| `youtube-<lang>.json` (film folder) | Title, description, tags, settings, `channel` (name shown in the previews, otherwise the brand's `--name`) |
+| `out/<film>-<lang>-thumbnail.jpg` and `.png` | `render.js <film> thumbnail <lang>` |
+| `out/youtube-kit-<lang>.html` | `kit.js <film> <lang>`: previews, Copy buttons, automatic checks; page labels in French for `fr`, in English otherwise |
 
-`kit.js` vérifie tout seul : titre de 100 caractères au plus (idéal 70), description de 5 000 au
-plus, chapitres valides (premier à 00:00, trois au moins, 10 s chacun au moins), tags sous 500
-caractères, 1 à 15 hashtags, aucun tiret cadratin, **liens de la description en HTTP 200**,
-miniature JPG sous 2 Mo et en 1280 x 720. Ne livrer que si tout est vert.
+`kit.js` checks on its own: title of 100 characters at most (ideal 70), description of 5,000 at
+most, valid chapters (first at 00:00, at least three, each at least 10 s long), tags under 500
+characters, 1 to 15 hashtags, no em dash, **description links answering HTTP 200**, thumbnail JPG
+under 2 MB and at 1280 x 720. Deliver only if everything is green.
 
-## Miniature
+## Thumbnail
 
-Elle se juge à **168 x 94** (colonne « à suivre ») : le kit l'affiche à cette taille, la regarder.
+It is judged at **168 x 94** (the "Up next" column): the kit shows it at that size, look at it.
 
-- **3 à 5 mots**, dans la police de titre de la charte (graisse 900 ou la plus forte disponible), 120 px ou
-  plus, blanc sur `--brand`. Un seul mot ou une promesse sur un bandeau `--accent`, texte `--ink`.
-- **Un seul objet fort**, repris du film (le téléphone, la conversation et son aperçu de lien pour
-  « Inviter son équipe »). Jamais de peluche ni de visuel enfantin (voir `direction-artistique.md`). Pas de capture d'écran de l'app : illisible en petit.
-- Le **logo blanc** officiel en haut à gauche, et rien d'autre en plus du message et de l'objet :
-  pas de badge « Tuto » ni de catégorie, qui encombre.
-- **Coin bas droit libre** : YouTube y affiche la durée.
-- Même lumière que le film : reflet en haut à gauche, profondeur en bas à droite, trame de points
-  qui s'efface vers la droite.
-- Rien de faux ni d'exagéré : une promesse de durée (« en 30 secondes ») n'est permise que si
-  l'action prend vraiment ce temps une fois les prérequis remplis.
+- **3 to 5 words**, in the brand's title font (900 weight or the boldest available), 120 px or
+  more, white on `--brand`. One word or a promise on an `--accent` band, `--ink` text.
+- **A single strong object**, taken from the film (the phone, the conversation and its link
+  preview for "Invite your team"). Never a plush toy or childish visual (see
+  `art-direction.md`). No screenshot of the app: unreadable when small.
+- The official **white logo** at the top left, and nothing else besides the message and the
+  object: no "Tutorial" badge or category, which clutters.
+- **Bottom right corner free**: YouTube shows the duration there.
+- Same lighting as the film: sheen at the top left, depth at the bottom right, dot grid fading out
+  to the right.
+- Nothing false or exaggerated: a duration promise ("in 30 seconds") is allowed only if the action
+  really takes that long once the prerequisites are met.
 
-## Titre
+## Title
 
-- Le **mot-clé que les gens tapent** en premier. Exemple du film de référence : on tape « partager
-  une liste de tâches » bien plus que « lien d'invitation », le terme de l'app : mettre le terme
-  courant dans le titre, le terme de l'app dans la miniature et la description.
-- La marque, puis une promesse vérifiable. 60 caractères au plus pour rester entier sur téléphone.
-- Pas de majuscules criardes, pas d'emoji, pas de point d'exclamation, pas de « incroyable ».
-- Exemple : « Partager une liste de tâches avec son équipe sur Coche » (54 caractères).
-- Pour un projet perso sans audience, le nom du produit compte moins que le problème résolu :
-  « Planifier ses séances de course en 2 minutes » plutôt que « Découvrez MonApp ».
+- The **keyword people type** first. Reference film example: people type "share a task list" far
+  more than "invite link", the app's term: put the common term in the title, the app's term in
+  the thumbnail and the description.
+- The brand, then a verifiable promise. 60 characters at most to stay whole on phones.
+- No shouty capitals, no emoji, no exclamation mark, no "amazing".
+- Example: "Share a task list with your team on Coche" (41 characters).
+- For a personal project without an audience, the product name matters less than the problem
+  solved: "Plan your running sessions in 2 minutes" rather than "Discover MyApp".
 
 ## Description
 
-1. **Deux premières lignes** (environ 150 caractères, visibles avant « plus ») : le mot-clé, le terme
-   de l'app entre parenthèses, et ce qu'on apprend. Le kit les surligne.
-2. **Chapitres** « Au programme » : `00:00`, puis une ligne par grande étape. Les instants se lisent
-   dans le film **avec les pauses** (l'apparition des légendes, voir `CAPS` et `HOLDS`).
-3. **En résumé** : les étapes numérotées, avec les **libellés exacts** de l'app, comme dans la doc.
-4. Les **liens vers la doc** complète et une doc voisine utile, vérifiés en HTTP 200. Les domaines
-   réservés aux exemples (`example.com`, `*.example`) ne sont pas vérifiés : le kit le signale.
-5. **Trois hashtags** en dernière ligne (les trois s'affichent au-dessus du titre) :
-   `#<Produit> #<domaine> #tutoriel` (film de référence : `#Coche #productivité #tutoriel`).
+1. **First two lines** (about 150 characters, visible before "more"): the keyword, the app's term
+   in parentheses, and what you learn. The kit highlights them.
+2. **Chapters**: `00:00`, then one line per major step. Times are read in the film **with the
+   pauses** (when the captions appear, see `CAPS` and `HOLDS`).
+3. **Summary**: the numbered steps, with the app's **exact labels**, as in the docs.
+4. The **links to the full docs** and a useful neighboring doc, checked for HTTP 200. Domains
+   reserved for examples (`example.com`, `*.example`) are not checked: the kit says so.
+5. **Three hashtags** on the last line (all three show above the title):
+   `#<Product> #<domain> #tutorial` (reference film: `#Coche #productivity #tutorial`).
 
-Mêmes règles que les docs : vouvoiement, pas de tiret cadratin, espace avant les deux-points en
-français, aucune promesse sur l'argent ou les délais qui ne soit pas prouvée dans le code.
+Same rules as the docs: formal address where the language has one (vous in French), no em dash,
+a space before colons in French, no promise about money or delays that is not proven in the code.
 
-## Tags et réglages
+## Tags and settings
 
-- 10 à 15 tags : les synonymes du mot-clé (« partager une liste de tâches », « liste partagée »,
-  « lien d'invitation »), la marque, le public visé (film de référence : « travail en équipe »).
-- Réglages à indiquer dans le JSON : langue, catégorie Éducation, vidéo non destinée aux enfants,
-  chapitres automatiques désactivés, écran de fin de 5 s au plus pour ne pas masquer le vrai écran.
+- 10 to 15 tags: synonyms of the keyword ("share a task list", "shared list", "invite link"), the
+  brand, the target audience (reference film: "teamwork").
+- Settings to give in the JSON (`settings`): language, Education category, video not made for
+  kids, automatic chapters off, end screen of 5 s at most so it does not hide the real screen.

@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
-<title>Inviter son équipe, film</title>
-<link rel="stylesheet" href="charte.css">
+<title>Invite your team, film</title>
+<link rel="stylesheet" href="brand.css">
 <style>
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: #111114; overflow: hidden; }
@@ -79,7 +79,7 @@ body.render #player { display: none; }
     </div>
 
     <div class="card" id="side" style="left:1060px;top:250px;width:600px;height:726px;border-radius:30px">
-      <img class="a" data-logo="clair" style="left:44px;top:42px;height:44px" alt="">
+      <img class="a" data-logo="light" style="left:44px;top:42px;height:44px" alt="">
       <div class="sect" style="top:118px" data-k="general"></div>
       <div class="row" style="top:140px" data-i="0"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4" y="4" width="6.5" height="6.5" rx="1.2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.2"/></svg><span data-k="today"></span></div>
       <div class="row" style="top:212px" data-i="1"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12.5h5"/></svg><span data-k="inbox"></span><span style="margin-left:auto;margin-right:26px;min-width:40px;height:34px;border-radius:17px;background:var(--tint-2);color:var(--brand);font-size:20px;font-weight:700;display:flex;align-items:center;justify-content:center">1</span></div>
@@ -134,7 +134,7 @@ body.render #player { display: none; }
         <div class="a" style="left:16px;top:282px;width:364px;height:364px;border-radius:22px 6px 22px 22px;background:#DCF1E6;box-shadow:0 1px 2px rgba(0,0,0,.06)">
           <div class="a" style="left:20px;top:14px;font-size:21px;font-weight:500;color:#1F2329" data-k="chat_m2"></div>
           <div class="a" style="left:12px;top:54px;width:340px;height:214px;border-radius:16px;background:#FFFFFF;overflow:hidden">
-            <svg id="objet" class="a" style="left:0;top:0" width="340" height="124" viewBox="0 0 340 124">
+            <svg id="object" class="a" style="left:0;top:0" width="340" height="124" viewBox="0 0 340 124">
               <rect width="340" height="124" style="fill:var(--tint-2)"/>
               <g transform="translate(92 20)">
                 <circle cx="13" cy="13" r="12" style="fill:var(--brand)"/><path d="M7.5 13.3l3.7 3.7 7.3-7.6" fill="none" stroke="#fff" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
@@ -245,7 +245,7 @@ body.render #player { display: none; }
     <div id="prog"><div><i></i></div><div><i></i></div><div><i></i></div><div><i></i></div><div><i></i></div></div>
 
     <div id="outro" class="a" style="width:1920px;height:1080px">
-      <img id="oLogo" class="a" data-logo="fonce" style="left:0;top:0;height:74px" alt="">
+      <img id="oLogo" class="a" data-logo="dark" style="left:0;top:0;height:74px" alt="">
       <div id="oTitle" class="a u" style="top:470px;width:1920px;text-align:center;font-weight:900;font-size:92px;letter-spacing:-.04em;color:#fff" data-k="o_title"></div>
       <div id="oPill" class="a" style="top:612px;height:68px;padding:0 32px;border-radius:34px;background:rgba(255,255,255,.14);border:1.5px solid rgba(255,255,255,.3);color:#fff;display:flex;align-items:center;gap:14px;font-size:28px;font-weight:600">
         <span data-k="o_pill"></span>
@@ -257,7 +257,7 @@ body.render #player { display: none; }
 
 <div id="player"><button id="pp">Pause</button><input id="scrub" type="range" min="0" step="0.0001" value="0"><span id="tc">0.00 s</span></div>
 
-<script src="moteur.js"></script>
+<script src="engine.js"></script>
 <script>
 const TXT = {
   fr: {
@@ -286,7 +286,7 @@ const TXT = {
     general: 'General', tools: 'Tools', today: 'Today', inbox: 'Inbox', calendar: 'Calendar',
     projects: 'Projects', reports: 'Reports', invite: 'Invite', spaces: 'Spaces',
     settings: 'General settings', list_url: 'List address', space: 'Space', invite_link: 'Invite link',
-    list_url_value: 'https://coche.example/listes/lancement',
+    list_url_value: 'https://coche.example/lists/launch',
     looking: 'Looking for the matching list...', generating: 'Generating the link...',
     member: 'Member', auto: 'Recognized automatically', code_note: 'Invite code',
     join: 'Join', pending: 'Pending', space_initials: 'PT', space_name: 'Product Team', space_kind: 'Team space',
@@ -302,15 +302,15 @@ const TXT = {
     c5: 'Send it to your team', c5a: 'One click is all it takes to join.',
     c6: 'And here is the real screen', c6a: 'Tools › Invite, in your space.',
     o_title: 'Invite your whole team', o_pill: 'Full docs at coche.example',
-    link: ['https://coche.example/rejoindre/lancement?code=', 'K7Q2', '']
+    link: ['https://coche.example/join/launch?code=', 'K7Q2', '']
   }
 };
 logos();
-const LANG = new URLSearchParams(location.search).get('lang') || 'fr';
+const LANG = new URLSearchParams(location.search).get('lang') || 'en';
 const T = TXT[LANG];
 document.querySelectorAll('[data-k]').forEach(e => { e.textContent = T[e.dataset.k]; });
-$('realImg').src = `assets/ecran-reel-${LANG}.png`;
-const CAPTURE = fetch(`assets/ecran-reel-${LANG}.json`).then(r => r.json()).catch(() => null);
+$('realImg').src = `assets/real-screen-${LANG}.png`;
+const CAPTURE = fetch(`assets/real-screen-${LANG}.json`).then(r => r.json()).catch(() => null);
 
 const FPS = 60;
 const INS_A = 4.3, INS_D = 1.2;
@@ -336,8 +336,8 @@ const ST = {
 };
 const GEO = [[2.45,'CHIP','def'],[5.55,'MENU','def'],[8.45,'INPUT','def'],[12.35,'LINK','def'],[17.45,'STICKER','def'],[21.75,'RING','def'],[23.55,'FULL','heavy']];
 const geo = (t, k) => tr(t, ST.FULL[k], GEO.map(g => [g[0], ST[g[1]][k], g[2]]));
-const VIO = couleur('--brand'), VIO0 = couleur('--brand', 0), GRN = couleur('--success-bg'), SUC = couleur('--success'), HOV = couleur('--tint-2'), LAV = couleur('--tint'),
-  WHT = [255,255,255,1], INK = couleur('--ink'), LINE = couleur('--line'), PEND = couleur('--warning-bg'), WARN = couleur('--warning');
+const VIO = color('--brand'), VIO0 = color('--brand', 0), GRN = color('--success-bg'), SUC = color('--success'), HOV = color('--tint-2'), LAV = color('--tint'),
+  WHT = [255,255,255,1], INK = color('--ink'), LINE = color('--line'), PEND = color('--warning-bg'), WARN = color('--warning');
 const BG_KEYS = [[2.62,GRN,'ui'],[5.58,HOV,'ui'],[6.9,LAV,'snap'],[8.45,WHT,'ui'],[12.35,LAV,'ui'],[17.45,WHT,'ui'],[21.75,VIO0,'ui'],[23.55,VIO,'def']];
 
 const CUR = [
@@ -363,27 +363,27 @@ function init() {
   const L = $('oLogo'); L.style.left = (960 - L.getBoundingClientRect().width / 2) + 'px';
   $('oPill').style.left = (960 - $('oPill').offsetWidth / 2) + 'px';
   $('subid').style.left = (980 - $('subid').offsetWidth) + 'px';
-  if (capture && capture.boites) cadresCapture(capture);
+  if (capture && capture.boxes) captureFrames(capture);
 }
 
-function cadresCapture(c) {
+function captureFrames(c) {
   const k = 1120 / c.viewport[0], x0 = 400, y0 = 262 + 44;
-  const z = c.boites.zoneLien, m = c.boites.itemMenu;
+  const z = c.boxes.linkArea, m = c.boxes.menuItem;
   if (z) Object.assign(ST.RING, { x: x0 + z.x * k - 7, y: y0 + z.y * k - 7, w: z.w * k + 14, h: z.h * k + 14 });
   if (m) Object.assign($('ring2').style, { left: (x0 + m.x * k - 5) + 'px', top: (y0 + m.y * k - 5) + 'px',
     width: (m.w * k + 10) + 'px', height: (m.h * k + 10) + 'px' });
 }
 
-function paintBase(t, tReel) {
+function paintBase(t, tReal) {
   const camFx = tr(t, 960, [[15.2,1060,'cam'],[17.35,960,'cam']]);
   const camFy = tr(t, 540, [[12.7,823,'cam'],[17.35,540,'cam']]);
-  const camZ = tr(t, 1, [[12.7,1.16,'cam'],[15.2,1.2,'cam'],[17.35,1,'cam']]) + 0.012 * Math.sin(tReel * 0.35);
+  const camZ = tr(t, 1, [[12.7,1.16,'cam'],[15.2,1.2,'cam'],[17.35,1,'cam']]) + 0.012 * Math.sin(tReal * 0.35);
   const wx = 960 - camFx * camZ, wy = 540 - camFy * camZ;
   $('world').style.transform = `translate(${wx.toFixed(2)}px,${wy.toFixed(2)}px) scale(${camZ.toFixed(4)})`;
-  $('dots').style.transform = `translate(${(-(camFx - 960) * .25 - tReel * 6) % 40}px,${(-(camFy - 540) * .25) % 40}px)`;
-  put($('b1'), { x: 1080 + 90 * Math.sin(tReel * .23), y: -380 + 60 * Math.cos(tReel * .19) });
-  put($('b2'), { x: -260 + 70 * Math.cos(tReel * .21), y: 520 + 60 * Math.sin(tReel * .17) });
-  put($('b3'), { x: 1320 + 80 * Math.sin(tReel * .15 + 1), y: 560 + 70 * Math.cos(tReel * .2) });
+  $('dots').style.transform = `translate(${(-(camFx - 960) * .25 - tReal * 6) % 40}px,${(-(camFy - 540) * .25) % 40}px)`;
+  put($('b1'), { x: 1080 + 90 * Math.sin(tReal * .23), y: -380 + 60 * Math.cos(tReal * .19) });
+  put($('b2'), { x: -260 + 70 * Math.cos(tReal * .21), y: 520 + 60 * Math.sin(tReal * .17) });
+  put($('b3'), { x: 1320 + 80 * Math.sin(tReal * .15 + 1), y: 560 + 70 * Math.cos(tReal * .2) });
 
   put($('progCard'), enter(t, 2.52, 5.35, { dy: 50 }));
 
@@ -421,7 +421,7 @@ function paintBase(t, tReel) {
   const ph = enter(t, 17.5, 21.35, { dy: 70, s0: .9, so: .92 });
   ph.r = -4 * (1 - clamp(sp(t, 17.5, 'def')));
   put($('phone'), ph);
-  $('objet').style.transform = `translateY(${(3 * Math.sin(tReel * 2.4)).toFixed(2)}px)`;
+  $('object').style.transform = `translateY(${(3 * Math.sin(tReal * 2.4)).toFixed(2)}px)`;
   const si = sp(t, 18.35, 'play'), so = sp(t, 21.3, 'ui');
   put($('subid'), { o: clamp(si) * (1 - clamp(so)), s: .4 + .6 * si - .2 * so, x: 30 * (1 - si) });
   $('subLine').style.opacity = (clamp(si) * (1 - clamp(so))).toFixed(3);
@@ -444,7 +444,7 @@ function paintBase(t, tReel) {
   put($('real'), re);
   $('real').style.transform += ` perspective(1600px) rotateX(${(10 * (1 - clamp(sp(t, 21.5, 'def')))).toFixed(2)}deg)`;
   const r2 = io(t, 22.35, 23.6, 'play', 'ui');
-  put($('ring2'), { o: r2 * (.75 + .25 * Math.sin(tReel * 7)), s: .8 + .2 * clamp(sp(t, 22.35, 'play')) });
+  put($('ring2'), { o: r2 * (.75 + .25 * Math.sin(tReal * 7)), s: .8 + .2 * clamp(sp(t, 22.35, 'play')) });
 
   const sh = $('shape');
   const gx = geo(t, 'x'), gy = geo(t, 'y'), gw = geo(t, 'w'), gh = geo(t, 'h'), gr = geo(t, 'r');
@@ -457,7 +457,7 @@ function paintBase(t, tReel) {
   const bw = Math.max(0, tr(t, 0, [[8.45,2,'ui'],[12.35,0,'ui'],[21.75,5,'ui'],[23.55,0,'ui']]));
   sh.style.borderWidth = bw.toFixed(2) + 'px';
   sh.style.borderColor = rgba(trA(t, LINE, [[9.0,VIO,'snap']]));
-  const glow = Math.max(0, tr(t, 0, [[9.0,7,'snap'],[12.35,0,'ui'],[21.95,5,'ui'],[23.55,0,'ui']])) + (t > 22 && t < 23.6 ? 3 * Math.sin(tReel * 5) : 0);
+  const glow = Math.max(0, tr(t, 0, [[9.0,7,'snap'],[12.35,0,'ui'],[21.95,5,'ui'],[23.55,0,'ui']])) + (t > 22 && t < 23.6 ? 3 * Math.sin(tReal * 5) : 0);
   const elev = Math.max(0, tr(t, 0, [[12.8,.12,'ui'],[17.45,.22,'ui'],[21.75,0,'ui']]));
   const grn = Math.max(0, tr(t, 0, [[2.9,.25,'ui'],[5.55,0,'ui']]));
   sh.style.boxShadow = `0 0 0 ${glow.toFixed(2)}px color-mix(in srgb, var(--brand) 14%, transparent), 0 18px 40px ${alpha(VIO, elev)}, 0 10px 24px ${alpha(SUC, grn)}`;
@@ -473,7 +473,7 @@ function paintBase(t, tReel) {
   const wipe = clamp(sp(t, 9.5, 'snap'));
   $('urlTxt').style.clipPath = `inset(-10px ${(100 - 100 * wipe).toFixed(2)}% -10px -2px)`;
   $('urlTxt').style.transform = `translateX(${(-18 * (1 - wipe)).toFixed(2)}px)`;
-  $('caret1').style.opacity = t > 9.0 && t < 12.35 && (Math.floor(tReel * 2.2) % 2 === 0 || (t > 9.4 && t < 9.9)) ? 1 : 0;
+  $('caret1').style.opacity = t > 9.0 && t < 12.35 && (Math.floor(tReal * 2.2) % 2 === 0 || (t > 9.4 && t < 9.9)) ? 1 : 0;
   put($('clearX'), { o: clamp(sp(t, 9.7, 'ui')) });
   put($('cGen'), { o: io(t, 12.62, 13.18, 'ui', 'snap') });
   $('shimmer').style.transform = `translateX(${(-420 + ((t - 12.6) * 1500) % 1700).toFixed(1)}px)`;
@@ -484,7 +484,7 @@ function paintBase(t, tReel) {
   $('lPre').textContent = T.link[0].slice(0, n);
   $('lMid').textContent = T.link[1].slice(0, Math.max(0, n - L0));
   $('lPost').textContent = T.link[2].slice(0, Math.max(0, n - L0 - L1));
-  $('caret2').style.opacity = t > 13.1 && t < 14.4 ? ((pr < 1 || Math.floor(tReel * 4) % 2 === 0) ? 1 : 0) : 0;
+  $('caret2').style.opacity = t > 13.1 && t < 14.4 ? ((pr < 1 || Math.floor(tReal * 4) % 2 === 0) ? 1 : 0) : 0;
   const hl = io(t, 14.3, 17.05, 'ui', 'ui');
   const hlE = $('hl');
   hlE.style.left = (linkW.midL - 8) + 'px'; hlE.style.top = '-6px'; hlE.style.height = (linkW.h + 12) + 'px';
@@ -540,7 +540,7 @@ function paintBase(t, tReel) {
   const gd = clamp(sp(t, .3, 'soft')), gd2 = clamp(sp(t, .55, 'soft'));
   $('gA').style.strokeDashoffset = (1 - gd).toFixed(4); $('gB').style.strokeDashoffset = (1 - gd2).toFixed(4);
   const gOut = sp(t, 2.3, 'ui');
-  put($('glyph'), { o: io(t, .2, 2.3, 'ui', 'ui'), s: 1 + .06 * Math.sin(tReel * 2) - .6 * gOut, r: 10 * Math.sin(tReel * .9) + 90 * gOut });
+  put($('glyph'), { o: io(t, .2, 2.3, 'ui', 'ui'), s: 1 + .06 * Math.sin(tReal * 2) - .6 * gOut, r: 10 * Math.sin(tReal * .9) + 90 * gOut });
   hk.style.visibility = t < 3.2 ? 'visible' : 'hidden';
 
   const CAPS = [[1, 2.85, 5.45], [2, 5.6, 8.35], [3, 8.55, 12.35], [4, 12.5, 17.3], [5, 17.5, 21.4], [6, 21.6, 23.45]];
@@ -581,10 +581,10 @@ function paintBase(t, tReel) {
 }
 
 function scene1(t, u) {
-  const dans = t >= 2.4 && t <= INS_A + INS_D;
-  put($('cApply'), { o: dans ? io(t, 2.82, 3.8, 'ui', 'snap') : 0 });
-  put($('cPend'), { o: dans ? io(t, 3.9, 5.02, 'ui', 'snap') : 0, s: .8 + .2 * clamp(sp(t, 3.9, 'play'), 0, 1.3) });
-  if (!dans) return;
+  const inside = t >= 2.4 && t <= INS_A + INS_D;
+  put($('cApply'), { o: inside ? io(t, 2.82, 3.8, 'ui', 'snap') : 0 });
+  put($('cPend'), { o: inside ? io(t, 3.9, 5.02, 'ui', 'snap') : 0, s: .8 + .2 * clamp(sp(t, 3.9, 'play'), 0, 1.3) });
+  if (!inside) return;
   const sh = $('shape');
   sh.style.backgroundColor = rgba(trA(t, VIO, [[3.85, PEND, 'ui'], [5.05, GRN, 'ui']]));
   const pulse = 1 + imp(t, 3.75, -.05) + imp(t, 5.05, .06);
@@ -619,7 +619,7 @@ function scene1(t, u) {
 
 function paint(T) { const t = hold(T); const u = warp(t); paintBase(u, T); scene1(t, u); }
 
-demarrer({ duree: DURATION, fps: FPS, init, peindre: paint, polices: policesCharte(), attendre: [CAPTURE] });
+startFilm({ duration: DURATION, fps: FPS, init, paint, fonts: brandFonts(), waitFor: [CAPTURE] });
 </script>
 </body>
 </html>

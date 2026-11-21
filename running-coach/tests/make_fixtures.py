@@ -216,17 +216,17 @@ def history() -> list[dict]:
     longs = [12000, 13000, 14000, 11000, 15000]
     for w, long_m in enumerate(longs):
         monday = utc(2026, 8, 31) + timedelta(weeks=w)
-        rows.append({"start": monday + timedelta(days=1, hours=5), "name": "Séance", "type": "running", "distance": 9000,
+        rows.append({"start": monday + timedelta(days=1, hours=5), "name": "Workout", "type": "running", "distance": 9000,
                      "moving": 2900, "hr": 158, "max": 176})
-        rows.append({"start": monday + timedelta(days=2, hours=16, minutes=30), "name": "Vélo", "type": "cycling",
+        rows.append({"start": monday + timedelta(days=2, hours=16, minutes=30), "name": "Bike", "type": "cycling",
                      "distance": 25000, "moving": 3600, "hr": 126, "max": 148})
-        rows.append({"start": monday + timedelta(days=3, hours=5), "name": "Footing", "type": "running", "distance": 7000,
+        rows.append({"start": monday + timedelta(days=3, hours=5), "name": "Easy run", "type": "running", "distance": 7000,
                      "moving": 2555, "hr": 142, "max": 151})
-        rows.append({"start": monday + timedelta(days=5, hours=7), "name": "Footing", "type": "running", "distance": 6000,
+        rows.append({"start": monday + timedelta(days=5, hours=7), "name": "Easy run", "type": "running", "distance": 6000,
                      "moving": 2220, "hr": 139, "max": 149})
-        rows.append({"start": monday + timedelta(days=6, hours=7), "name": "Sortie longue", "type": "running",
+        rows.append({"start": monday + timedelta(days=6, hours=7), "name": "Long run", "type": "running",
                      "distance": long_m, "moving": round(long_m / 1000 * 365), "hr": 146, "max": 158})
-    rows.append({"start": utc(2026, 10, 8, 5, 0, 30), "name": "Footing", "type": "running", "distance": 8010,
+    rows.append({"start": utc(2026, 10, 8, 5, 0, 30), "name": "Easy run", "type": "running", "distance": 8010,
                  "moving": 2905, "hr": 143, "max": 151})
     return rows
 
@@ -246,7 +246,7 @@ def main() -> None:
     (files / "2026-10-06_intervals.tcx.gz").write_bytes(gzip.compress(tcx(pts, laps).encode(), mtime=0))
 
     pts, _ = simulate([(8000, 365, 141, 147)], utc(2026, 10, 8, 5, 0), 10, seed=2)
-    (files / "2026-10-08_easy.gpx").write_text(gpx(pts, "Footing du jeudi"), encoding="utf-8")
+    (files / "2026-10-08_easy.gpx").write_text(gpx(pts, "Thursday easy run"), encoding="utf-8")
 
     tempo = [(2000, 365, 135, 145), (5000, 292, 163, 170), (1500, 375, 145, 138)]
     pts, _ = simulate(tempo, utc(2026, 10, 10, 7, 0), 2, seed=3)
@@ -254,7 +254,7 @@ def main() -> None:
     (files / "2026-10-10_tempo.fit").write_bytes(tempo_fit)
 
     pts, _ = simulate([(13000, 360, 141, 149), (3000, 360, 153, 157)], utc(2026, 10, 11, 7, 30), 5, seed=4)
-    detail = strava_detail(8000000001, "Sortie longue du dimanche", pts, km_laps(pts, pts[0]["time"]))
+    detail = strava_detail(8000000001, "Sunday long run", pts, km_laps(pts, pts[0]["time"]))
     (files / "2026-10-11_strava_long_run.json").write_text(json.dumps(detail, indent=1), encoding="utf-8")
 
     (files / "garmin_summarizedActivities.json").write_text(json.dumps(garmin_export(history()), indent=1), encoding="utf-8")
@@ -264,14 +264,14 @@ def main() -> None:
     run_laps = km_laps(pts, run_start)
     ride_start = utc(2026, 10, 14, 16, 30)
     listing = [
-        {k: v for k, v in strava_detail(9000000001, "Footing matinal", pts, run_laps).items() if k != "laps"},
-        {"id": 9000000002, "name": "Vélo du soir", "type": "Ride", "sport_type": "Ride", "start_date": iso(ride_start),
+        {k: v for k, v in strava_detail(9000000001, "Morning easy run", pts, run_laps).items() if k != "laps"},
+        {"id": 9000000002, "name": "Evening ride", "type": "Ride", "sport_type": "Ride", "start_date": iso(ride_start),
          "start_date_local": iso(ride_start + LOCAL), "distance": 30500.0, "moving_time": 4200, "elapsed_time": 4400,
          "total_elevation_gain": 210.0, "has_heartrate": True, "average_heartrate": 128.0, "max_heartrate": 155.0},
     ]
     (strava_api / "activities.json").write_text(json.dumps(listing, indent=1), encoding="utf-8")
     (strava_api / "streams_9000000001.json").write_text(json.dumps(streams(pts)), encoding="utf-8")
-    laps_payload = strava_detail(9000000001, "Footing matinal", pts, run_laps)["laps"]
+    laps_payload = strava_detail(9000000001, "Morning easy run", pts, run_laps)["laps"]
     (strava_api / "laps_9000000001.json").write_text(json.dumps(laps_payload, indent=1), encoding="utf-8")
     (strava_api / "token_refresh.json").write_text(json.dumps({
         "token_type": "Bearer", "access_token": "fake-access-token-2", "expires_at": 4102444800, "expires_in": 21600,
@@ -279,11 +279,11 @@ def main() -> None:
 
     easy_fit = fit(pts, run_laps)
     garmin_list = [
-        {"activityId": 30000000001, "activityName": "Footing", "startTimeLocal": "2026-10-13 07:05:20",
+        {"activityId": 30000000001, "activityName": "Easy run", "startTimeLocal": "2026-10-13 07:05:20",
          "startTimeGMT": "2026-10-13 05:05:20", "activityType": {"typeId": 1, "typeKey": "running"},
          "distance": round(pts[-1]["dist"], 1), "duration": 3650.0, "movingDuration": 3620.0, "elapsedDuration": 3650.0,
          "averageHR": 144.0, "maxHR": 153.0, "elevationGain": 31.0},
-        {"activityId": 30000000002, "activityName": "Seuil", "startTimeLocal": "2026-10-15 07:00:00",
+        {"activityId": 30000000002, "activityName": "Threshold", "startTimeLocal": "2026-10-15 07:00:00",
          "startTimeGMT": "2026-10-15 05:00:00", "activityType": {"typeId": 1, "typeKey": "running"},
          "distance": 8500.0, "duration": 2700.0, "movingDuration": 2680.0, "elapsedDuration": 2700.0,
          "averageHR": 158.0, "maxHR": 172.0, "elevationGain": 38.0},
@@ -298,29 +298,29 @@ def main() -> None:
 
     (ROOT / "profile.json").write_text(json.dumps({
         "sex": "female", "hr_max": 187, "hr_rest": 48, "reference_race": {"distance_km": 10, "time": "47:30"},
-        "goal": {"name": "Semi-marathon de printemps", "distance_km": 21.1, "date": "2027-03-14", "target_time": "1:44:00"},
+        "goal": {"name": "Spring half marathon", "distance_km": 21.1, "date": "2027-03-14", "target_time": "1:44:00"},
         "weekly_km": 38, "runs_per_week": 4, "long_run_day": "sun"}, indent=1, ensure_ascii=False), encoding="utf-8")
     (ROOT / "plan.json").write_text(json.dumps({
-        "name": "Semi de printemps", "start": "2026-08-31",
-        "weeks": {"2026-W41": {"phase": "Développement", "km": 38, "sessions": [
-            {"day": "tue", "type": "quality", "priority": 1, "desc": "6 × 800 m VMA, récupération 400 m"},
-            {"day": "thu", "type": "easy", "priority": 3, "desc": "Footing 8 km", "km": 8},
-            {"day": "sat", "type": "quality", "priority": 2, "desc": "Seuil 5 km continu"},
-            {"day": "sun", "type": "long", "priority": 1, "desc": "Sortie longue 16 km en Z2", "km": 16}]},
-            "2026-W42": {"phase": "Développement", "km": 40, "sessions": [
-                {"day": "tue", "type": "quality", "priority": 1, "desc": "Seuil 3 × 10 min", "spec": {
-                    "name": "Seuil 3x10'", "steps": [
+        "name": "Spring half", "start": "2026-08-31",
+        "weeks": {"2026-W41": {"phase": "Build", "km": 38, "sessions": [
+            {"day": "tue", "type": "quality", "priority": 1, "desc": "6 × 800 m VO2max, 400 m recovery"},
+            {"day": "thu", "type": "easy", "priority": 3, "desc": "Easy run 8 km", "km": 8},
+            {"day": "sat", "type": "quality", "priority": 2, "desc": "Threshold 5 km continuous"},
+            {"day": "sun", "type": "long", "priority": 1, "desc": "Long run 16 km in Z2", "km": 16}]},
+            "2026-W42": {"phase": "Build", "km": 40, "sessions": [
+                {"day": "tue", "type": "quality", "priority": 1, "desc": "Threshold 3 × 10 min", "spec": {
+                    "name": "Threshold 3x10'", "steps": [
                         {"kind": "warmup", "dur": "15:00"},
                         {"kind": "repeat", "times": 3, "steps": [
                             {"kind": "interval", "dur": "10:00", "target": {"pace": ["4:45", "4:55"]}},
                             {"kind": "recovery", "dur": "2:00"}]},
                         {"kind": "cooldown", "dur": "10:00"}]}},
-                {"day": "thu", "type": "easy", "priority": 3, "desc": "Footing 45 min", "km": 7.5},
-                {"day": "sun", "type": "long", "priority": 1, "desc": "Sortie longue 17 km", "km": 17}]}}},
+                {"day": "thu", "type": "easy", "priority": 3, "desc": "Easy run 45 min", "km": 7.5},
+                {"day": "sun", "type": "long", "priority": 1, "desc": "Long run 17 km", "km": 17}]}}},
         indent=1, ensure_ascii=False), encoding="utf-8")
-    print(f"fixtures écrites dans {ROOT}")
+    print(f"fixtures written to {ROOT}")
 
 
 if __name__ == "__main__":
-    argparse.ArgumentParser(description="Régénère les données synthétiques de tests/fixtures (aucune dépendance).").parse_args()
+    argparse.ArgumentParser(description="Regenerates the synthetic data in tests/fixtures (no dependencies).").parse_args()
     main()

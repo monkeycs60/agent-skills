@@ -54,7 +54,7 @@ def elevation_gain(alts: list[float | None]) -> float | None:
 def build_samples(points: list[dict[str, Any]]) -> tuple[datetime, dict[str, list], dict[str, Any]]:
     points = sorted((p for p in points if p.get("time") is not None), key=lambda p: p["time"])
     if len(points) < 2:
-        raise Skip("moins de deux points horodatés")
+        raise Skip("fewer than two timestamped points")
     t0 = points[0]["time"]
     has_dist = sum(1 for p in points if p.get("dist") is not None) >= 0.8 * len(points)
     t, d, hr, alt = [], [], [], []
@@ -149,7 +149,7 @@ def parse_gpx(data: bytes, label: str, digest: str) -> list[dict[str, Any]]:
                     p["hr"] = float(sub.text)
             points.append(p)
     if not points:
-        raise Skip("aucun point de trace")
+        raise Skip("no track points")
     t0, samples, stats = build_samples(points)
     return [_finish_file_activity(label, digest, normalize_sport(sport) if sport else None, t0, samples, stats, name)]
 
@@ -210,7 +210,7 @@ def parse_tcx(data: bytes, label: str, digest: str) -> list[dict[str, Any]]:
                                          normalize_sport(sport) if sport and sport.lower() != "other" else None,
                                          t0, samples, stats, None, norm_laps, overrides))
     if not out:
-        raise Skip("aucune activité avec des points")
+        raise Skip("no activity with points")
     return out
 
 
@@ -226,7 +226,7 @@ def parse_fit(data: bytes, label: str, digest: str) -> list[dict[str, Any]]:
     try:
         import fitdecode
     except ImportError as e:
-        raise CoachError("lecture des fichiers FIT : dépendance fitdecode absente, lancer install.sh") from e
+        raise CoachError("reading FIT files: fitdecode dependency missing, run install.sh") from e
     points, laps, session, sport = [], [], {}, None
     activity_local = activity_ts = None
     first = True
@@ -244,7 +244,7 @@ def parse_fit(data: bytes, label: str, digest: str) -> list[dict[str, Any]]:
                 first = False
                 ftype = val("type")
                 if ftype not in (None, "activity", 4):
-                    raise Skip(f"fichier FIT de type {ftype}, pas une activité")
+                    raise Skip(f"FIT file of type {ftype}, not an activity")
             elif name == "record":
                 ts = _fit_time(val("timestamp"))
                 if ts is None:
@@ -284,7 +284,7 @@ def parse_fit(data: bytes, label: str, digest: str) -> list[dict[str, Any]]:
             elif name == "activity":
                 activity_ts, activity_local = val("timestamp"), val("local_timestamp")
     if not points:
-        raise Skip("aucun enregistrement")
+        raise Skip("no records")
     t0, samples, stats = build_samples(points)
     if session.get("start"):
         t0 = session["start"]
@@ -397,7 +397,7 @@ def parse_json(data: bytes, label: str, digest: str) -> list[dict[str, Any]]:
     try:
         obj = json.loads(data)
     except (json.JSONDecodeError, UnicodeDecodeError) as e:
-        raise Skip(f"JSON illisible ({e})") from e
+        raise Skip(f"unreadable JSON ({e})") from e
     items = obj if isinstance(obj, list) else [obj]
     out = []
     for item in items:
@@ -412,7 +412,7 @@ def parse_json(data: bytes, label: str, digest: str) -> list[dict[str, Any]]:
         elif "id" in item and "start_date" in item and ("sport_type" in item or "type" in item):
             out.append(strava_activity(item))
     if not out:
-        raise Skip("JSON sans activité Strava ni Garmin reconnue")
+        raise Skip("JSON without any recognised Strava or Garmin activity")
     return out
 
 
@@ -436,7 +436,7 @@ def _from_archive(label: str, source: Any) -> Iterator[tuple[str, bytes, str]]:
     try:
         zf = zipfile.ZipFile(source)
     except zipfile.BadZipFile as e:
-        raise CoachError(f"{label} : archive zip illisible") from e
+        raise CoachError(f"{label}: unreadable zip archive") from e
     with zf:
         for info in zf.infolist():
             if info.is_dir() or "__MACOSX" in info.filename:
@@ -467,7 +467,7 @@ def iter_inputs(paths: list[str]) -> Iterator[tuple[str, bytes, str]]:
     for raw in paths:
         path = Path(raw).expanduser()
         if not path.exists():
-            raise CoachError(f"introuvable : {raw}")
+            raise CoachError(f"not found: {raw}")
         files = sorted(p for p in path.rglob("*") if p.is_file()) if path.is_dir() else [path]
         for f in files:
             ext, gz = _kind(f.name)
@@ -490,7 +490,7 @@ def parse_bytes(label: str, data: bytes, ext: str, sport: str | None = None) -> 
     try:
         acts = PARSERS[ext](data, label, digest)
     except ET.ParseError as e:
-        raise Skip(f"XML illisible ({e})") from e
+        raise Skip(f"unreadable XML ({e})") from e
     if sport:
         for a in acts:
             a["sport"] = sport

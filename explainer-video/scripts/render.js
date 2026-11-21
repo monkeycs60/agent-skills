@@ -3,55 +3,55 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const { execFile } = require('child_process');
-const { lancer, sleep } = require('./cdp');
-const { trouverFfmpeg } = require('./outils');
+const { launch, sleep } = require('./cdp');
+const { findFfmpeg } = require('./tools');
 
-const USAGE = `usage :
-  node render.js <dossier-film> planche <t1,t2,...> [lang]
-  node render.js <dossier-film> video [lang]
-  node render.js <dossier-film> encoder [lang]
-  node render.js <dossier-film> verifier [lang]
-  node render.js <dossier-film> affiche <t> [lang]
-  node render.js <dossier-film> miniature [lang]`;
-const MODES = ['planche', 'video', 'encoder', 'verifier', 'affiche', 'miniature'];
+const USAGE = `usage:
+  node render.js <film-folder> contact-sheet <t1,t2,...> [lang]
+  node render.js <film-folder> video [lang]
+  node render.js <film-folder> encode [lang]
+  node render.js <film-folder> verify [lang]
+  node render.js <film-folder> poster <t> [lang]
+  node render.js <film-folder> thumbnail [lang]`;
+const MODES = ['contact-sheet', 'video', 'encode', 'verify', 'poster', 'thumbnail'];
 if (process.argv.length < 4 || !MODES.includes(process.argv[3])) { console.error(USAGE); process.exit(2); }
 
-const OUTILS = __dirname;
+const SCRIPTS = __dirname;
 const FILM = path.resolve(process.argv[2]);
 const MODE = process.argv[3];
 const A4 = process.argv[4] || '', A5 = process.argv[5] || '';
-const AVEC_INSTANTS = MODE === 'planche' || MODE === 'affiche';
-const LANG = AVEC_INSTANTS ? (A5 || 'fr') : (A4 || 'fr');
-const NOM = path.basename(FILM);
-const TMP = path.resolve(process.env.FRAMES_DIR ? path.join(process.env.FRAMES_DIR, NOM + '-' + LANG) : path.join(os.tmpdir(), 'explainer-video-' + NOM + '-' + LANG));
+const WITH_TIMES = MODE === 'contact-sheet' || MODE === 'poster';
+const LANG = WITH_TIMES ? (A5 || 'en') : (A4 || 'en');
+const NAME = path.basename(FILM);
+const TMP = path.resolve(process.env.FRAMES_DIR ? path.join(process.env.FRAMES_DIR, NAME + '-' + LANG) : path.join(os.tmpdir(), 'explainer-video-' + NAME + '-' + LANG));
 const OUT = path.join(FILM, 'out');
-const MP4 = `${NOM}-${LANG}.mp4`;
+const MP4 = `${NAME}-${LANG}.mp4`;
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.png': 'image/png', '.jpg': 'image/jpeg',
   '.woff2': 'font/woff2', '.woff': 'font/woff', '.ttf': 'font/ttf', '.otf': 'font/otf', '.css': 'text/css', '.webp': 'image/webp',
   '.svg': 'image/svg+xml', '.json': 'application/json', '.mp4': 'video/mp4' };
-const absents = new Set();
+const missing = new Set();
 let BASE = '';
-const secondes = (t0) => ((Date.now() - t0) / 1000).toFixed(1) + ' s';
-const executer = (bin, args) => new Promise((ok, ko) => execFile(bin, args, { maxBuffer: 64 * 1024 * 1024 },
-  (e, so, se) => e ? ko(new Error(path.basename(bin) + ' : ' + (se || e.message).trim().split('\n').slice(-3).join(' '))) : ok(so)));
+const seconds = (t0) => ((Date.now() - t0) / 1000).toFixed(1) + ' s';
+const run = (bin, args) => new Promise((ok, ko) => execFile(bin, args, { maxBuffer: 64 * 1024 * 1024 },
+  (e, so, se) => e ? ko(new Error(path.basename(bin) + ': ' + (se || e.message).trim().split('\n').slice(-3).join(' '))) : ok(so)));
 
-function serveur() {
+function server() {
   return new Promise(ok => {
     const s = http.createServer((req, res) => {
       const u = new URL(req.url, 'http://x');
       if (req.method === 'POST' && u.pathname === '/save') {
-        const flux = fs.createWriteStream(path.join(OUT, path.basename(u.searchParams.get('f') || 'sortie.bin')));
-        req.pipe(flux); flux.on('finish', () => res.end('ok'));
+        const stream = fs.createWriteStream(path.join(OUT, path.basename(u.searchParams.get('f') || 'output.bin')));
+        req.pipe(stream); stream.on('finish', () => res.end('ok'));
         return;
       }
       let f;
       if (u.pathname.startsWith('/frames/')) f = path.join(TMP, path.basename(u.pathname));
-      else if (u.pathname.startsWith('/_outils/')) f = path.join(OUTILS, path.basename(u.pathname));
+      else if (u.pathname.startsWith('/_scripts/')) f = path.join(SCRIPTS, path.basename(u.pathname));
       else f = path.join(FILM, decodeURIComponent(u.pathname));
-      if (![FILM, TMP, OUTILS].some(r => f.startsWith(r))) { res.statusCode = 403; return res.end(); }
+      if (![FILM, TMP, SCRIPTS].some(r => f.startsWith(r))) { res.statusCode = 403; return res.end(); }
       fs.readFile(f, (e, d) => {
         if (e) {
-          if (!u.pathname.startsWith('/frames/') && !/favicon/.test(u.pathname)) absents.add(decodeURIComponent(u.pathname));
+          if (!u.pathname.startsWith('/frames/') && !/favicon/.test(u.pathname)) missing.add(decodeURIComponent(u.pathname));
           res.statusCode = 404; return res.end();
         }
         res.setHeader('Content-Type', TYPES[path.extname(f).toLowerCase()] || 'application/octet-stream');
@@ -63,196 +63,196 @@ function serveur() {
   });
 }
 
-let signale = false;
-async function controlerChargement(p) {
+let reported = false;
+async function checkLoading(p) {
   const r = await p.js(`({ images: [...document.images].filter(i => i.getAttribute('src') && !i.naturalWidth).map(i => i.getAttribute('src')),
-    polices: [...document.fonts].filter(f => f.status === 'error').map(f => f.family) })`);
-  if (signale) return;
-  signale = true;
-  const manque = [...new Set([...r.images, ...absents])];
-  if (manque.length) console.warn('ATTENTION fichiers introuvables dans le film : ' + manque.join(', ') + (manque.some(m => /ecran-reel/.test(m)) ? ' (capture réelle à faire : capturer.js)' : ''));
-  if (r.polices.length) console.warn('ATTENTION polices en échec : ' + [...new Set(r.polices)].join(', ') + ' (vérifier @font-face dans charte.css)');
+    fonts: [...document.fonts].filter(f => f.status === 'error').map(f => f.family) })`);
+  if (reported) return;
+  reported = true;
+  const absent = [...new Set([...r.images, ...missing])];
+  if (absent.length) console.warn('WARNING files requested by the film but not found: ' + absent.join(', ') + (absent.some(m => /real-screen/.test(m)) ? ' (real screen capture still to do: capture.js)' : ''));
+  if (r.fonts.length) console.warn('WARNING fonts failed to load: ' + [...new Set(r.fonts)].join(', ') + ' (check @font-face in brand.css)');
 }
 
-async function ouvrirFilm(p) {
-  await p.taille(1920, 1080, 1);
-  await p.aller(`${BASE}/film.html?render&lang=${LANG}`);
-  await p.attendre('window.READY && true');
+async function openFilm(p) {
+  await p.size(1920, 1080, 1);
+  await p.goto(`${BASE}/film.html?render&lang=${LANG}`);
+  await p.waitFor('window.READY && true');
   await p.js('window.READY');
-  await controlerChargement(p);
+  await checkLoading(p);
 }
 
-async function photoA(p, t, fichier, qualite = 93) {
+async function shotAt(p, t, file, quality = 93) {
   await p.js(`window.seek(${t.toFixed(6)})`);
-  await p.photo(fichier, { format: 'jpeg', quality: qualite });
+  await p.screenshot(file, { format: 'jpeg', quality });
 }
 
-async function planche(p, temps) {
-  if (!temps.length || temps.some(t => !Number.isFinite(t))) throw new Error('instants invalides : ' + A4 + ' (exemple : 2,6.5,12)');
+async function contactSheet(p, times) {
+  if (!times.length || times.some(t => !Number.isFinite(t))) throw new Error('invalid times: ' + A4 + ' (example: 2,6.5,12)');
   fs.mkdirSync(TMP, { recursive: true });
-  await ouvrirFilm(p);
-  const noms = [];
-  for (const t of temps) {
+  await openFilm(p);
+  const names = [];
+  for (const t of times) {
     const n = `still-${String(Math.round(t * 100)).padStart(5, '0')}.jpg`;
-    await photoA(p, t, path.join(TMP, n), 90);
-    noms.push([n, t]);
+    await shotAt(p, t, path.join(TMP, n), 90);
+    names.push([n, t]);
   }
-  const cols = Math.min(4, noms.length), w = 470, h = Math.round(w * 9 / 16), rangs = Math.ceil(noms.length / cols);
+  const cols = Math.min(4, names.length), w = 470, h = Math.round(w * 9 / 16), rows = Math.ceil(names.length / cols);
   const html = `<body style="margin:0;background:#141418;font:600 15px sans-serif;color:#ddd">
     <div style="display:grid;grid-template-columns:repeat(${cols},${w}px);gap:10px;padding:10px">
-    ${noms.map(([n, t]) => `<div><img src="/frames/${n}" style="width:${w}px;height:${h}px;display:block;border-radius:4px"><div style="padding:4px 2px">${t.toFixed(2)} s</div></div>`).join('')}
+    ${names.map(([n, t]) => `<div><img src="/frames/${n}" style="width:${w}px;height:${h}px;display:block;border-radius:4px"><div style="padding:4px 2px">${t.toFixed(2)} s</div></div>`).join('')}
     </div></body>`;
-  fs.writeFileSync(path.join(TMP, 'planche.html'), html);
-  await p.taille(cols * (w + 10) + 10, rangs * (h + 34) + 14, 1);
-  await p.aller(`${BASE}/frames/planche.html`);
+  fs.writeFileSync(path.join(TMP, 'contact-sheet.html'), html);
+  await p.size(cols * (w + 10) + 10, rows * (h + 34) + 14, 1);
+  await p.goto(`${BASE}/frames/contact-sheet.html`);
   await p.js('Promise.all([...document.images].map(i => i.decode()))');
-  await p.photo(path.join(OUT, `planche-${LANG}.png`));
-  console.log(`planche : ${noms.length} images -> out/planche-${LANG}.png (pleine taille dans ${TMP})`);
+  await p.screenshot(path.join(OUT, `contact-sheet-${LANG}.png`));
+  console.log(`contact sheet: ${names.length} frames -> out/contact-sheet-${LANG}.png (full size in ${TMP})`);
 }
 
 const X264 = (fps) => ['-vf', 'colorspace=ispace=bt470bg:iprimaries=bt709:itrc=bt709:irange=pc:space=bt709:primaries=bt709:trc=bt709:range=tv:format=yuv420p',
   '-c:v', 'libx264', '-preset', 'medium', '-crf', '20', '-tune', 'animation', '-g', String(fps * 2),
   '-color_primaries', 'bt709', '-color_trc', 'bt709', '-colorspace', 'bt709', '-color_range', 'tv', '-movflags', '+faststart', path.join(OUT, MP4)];
 
-async function choisirEncodeur() {
-  const choix = (process.env.ENCODEUR || '').toLowerCase();
-  const ff = choix === 'chrome' ? null : await trouverFfmpeg();
-  if (choix === 'ffmpeg' && !ff) throw new Error('ENCODEUR=ffmpeg mais ffmpeg avec libx264 est introuvable');
+async function chooseEncoder() {
+  const choice = (process.env.ENCODER || '').toLowerCase();
+  const ff = choice === 'chrome' ? null : await findFfmpeg();
+  if (choice === 'ffmpeg' && !ff) throw new Error('ENCODER=ffmpeg but no ffmpeg with libx264 was found');
   return ff;
 }
 
-async function images(nav, p) {
+async function renderFrames(browser, p) {
   fs.rmSync(TMP, { recursive: true, force: true });
   fs.mkdirSync(TMP, { recursive: true });
-  await ouvrirFilm(p);
+  await openFilm(p);
   const dur = await p.js('window.DURATION'), fps = await p.js('window.FPS');
   const n = Math.round(dur * fps), t0 = Date.now();
-  const voulu = +process.env.WORKERS || Math.max(1, Math.min(4, Math.floor(os.cpus().length / 2)));
-  const onglets = [p];
-  for (let k = 1; k < Math.min(voulu, n); k++) { const o = await nav.onglet({ isole: true }); await ouvrirFilm(o); onglets.push(o); }
-  let suivant = 0, faites = 0, palier = 0;
-  await Promise.all(onglets.map(async (o) => {
-    for (let i = suivant++; i < n; i = suivant++) {
-      await photoA(o, i / fps, path.join(TMP, `f${String(i).padStart(5, '0')}.jpg`));
-      faites++;
-      if (faites >= palier) { console.log(`  image ${faites}/${n}  (${secondes(t0)})`); palier += 600; }
+  const wanted = +process.env.WORKERS || Math.max(1, Math.min(4, Math.floor(os.cpus().length / 2)));
+  const tabs = [p];
+  for (let k = 1; k < Math.min(wanted, n); k++) { const o = await browser.tab({ isolated: true }); await openFilm(o); tabs.push(o); }
+  let next = 0, done = 0, milestone = 0;
+  await Promise.all(tabs.map(async (o) => {
+    for (let i = next++; i < n; i = next++) {
+      await shotAt(o, i / fps, path.join(TMP, `f${String(i).padStart(5, '0')}.jpg`));
+      done++;
+      if (done >= milestone) { console.log(`  frame ${done}/${n}  (${seconds(t0)})`); milestone += 600; }
     }
   }));
-  console.log(`images : ${n} en ${secondes(t0)} (${onglets.length} onglets en parallèle)`);
+  console.log(`frames: ${n} in ${seconds(t0)} (${tabs.length} tabs in parallel)`);
   return fps;
 }
 
-async function encoderFfmpeg(ff, fps) {
+async function encodeFfmpeg(ff, fps) {
   const t0 = Date.now();
-  await executer(ff, ['-hide_banner', '-loglevel', 'error', '-y', '-framerate', String(fps), '-i', path.join(TMP, 'f%05d.jpg'), ...X264(fps)]);
-  const mo = fs.statSync(path.join(OUT, MP4)).size / 1e6;
-  console.log(`encodage : ffmpeg libx264 en ${secondes(t0)} -> out/${MP4} (${mo.toFixed(1)} Mo)`);
+  await run(ff, ['-hide_banner', '-loglevel', 'error', '-y', '-framerate', String(fps), '-i', path.join(TMP, 'f%05d.jpg'), ...X264(fps)]);
+  const mb = fs.statSync(path.join(OUT, MP4)).size / 1e6;
+  console.log(`encoding: ffmpeg libx264 in ${seconds(t0)} -> out/${MP4} (${mb.toFixed(1)} MB)`);
 }
 
-async function encoderChrome(p, fps) {
+async function encodeChrome(p, fps) {
   const n = fs.readdirSync(TMP).filter(f => /^f\d{5}\.jpg$/.test(f)).length;
   const t0 = Date.now();
-  await p.aller(`${BASE}/_outils/encoder.html?n=${n}&fps=${fps}&out=${MP4}`);
+  await p.goto(`${BASE}/_scripts/encoder.html?n=${n}&fps=${fps}&out=${MP4}`);
   const r = await p.js('window.ENCODE');
-  if (!r.ok) throw new Error('encodage dans le navigateur en échec : ' + r.err + ' (installer ffmpeg, ou prendre Google Chrome)');
-  console.log(`encodage : WebCodecs ${r.codec} en ${secondes(t0)} -> out/${MP4} (${r.moSec} Mo)`);
+  if (!r.ok) throw new Error('in-browser encoding failed: ' + r.err + ' (install ffmpeg, or use Google Chrome)');
+  console.log(`encoding: WebCodecs ${r.codec} in ${seconds(t0)} -> out/${MP4} (${r.mb} MB)`);
 }
 
-async function encoder(p, fps) {
+async function encode(p, fps) {
   const n = fs.existsSync(TMP) ? fs.readdirSync(TMP).filter(f => /^f\d{5}\.jpg$/.test(f)).length : 0;
-  if (!n) throw new Error('aucune image à encoder dans ' + TMP + ' : lancer le mode video');
-  const ff = await choisirEncodeur();
-  if (ff) await encoderFfmpeg(ff.ffmpeg, fps);
-  else await encoderChrome(p, fps);
+  if (!n) throw new Error('no frames to encode in ' + TMP + ': run the video mode');
+  const ff = await chooseEncoder();
+  if (ff) await encodeFfmpeg(ff.ffmpeg, fps);
+  else await encodeChrome(p, fps);
 }
 
-async function sonde(ff, mp4) {
+async function probe(ff, mp4) {
   if (!ff || !ff.ffprobe) return null;
-  const j = JSON.parse(await executer(ff.ffprobe, ['-v', 'error', '-select_streams', 'v:0', '-count_packets',
+  const j = JSON.parse(await run(ff.ffprobe, ['-v', 'error', '-select_streams', 'v:0', '-count_packets',
     '-show_entries', 'stream=codec_name,width,height,r_frame_rate,nb_read_packets,pix_fmt,color_space:format=duration', '-of', 'json', mp4]));
   const s = j.streams[0], [a, b] = s.r_frame_rate.split('/').map(Number);
-  return { codec: s.codec_name, largeur: s.width, hauteur: s.height, fps: +(a / b).toFixed(3), images: +s.nb_read_packets,
-    duree: +(+j.format.duration).toFixed(3), pixels: s.pix_fmt, matrice: s.color_space };
+  return { codec: s.codec_name, width: s.width, height: s.height, fps: +(a / b).toFixed(3), frames: +s.nb_read_packets,
+    duration: +(+j.format.duration).toFixed(3), pixels: s.pix_fmt, matrix: s.color_space };
 }
 
-async function verifier(p) {
+async function verify(p) {
   const mp4 = path.join(OUT, MP4);
-  if (!fs.existsSync(mp4)) throw new Error('vidéo introuvable : out/' + MP4 + ' (lancer le mode video)');
+  if (!fs.existsSync(mp4)) throw new Error('video not found: out/' + MP4 + ' (run the video mode)');
   fs.mkdirSync(TMP, { recursive: true });
-  await ouvrirFilm(p);
+  await openFilm(p);
   const dur = await p.js('window.DURATION'), fps = await p.js('window.FPS'), n = Math.round(dur * fps);
-  const ff = await trouverFfmpeg({ libx264: false });
-  const info = await sonde(ff, mp4);
+  const ff = await findFfmpeg({ libx264: false });
+  const info = await probe(ff, mp4);
   const indices = [.08, .25, .42, .58, .75, .92].map(k => Math.min(n - 1, Math.round(k * n)));
-  const paires = [];
+  const pairs = [];
   for (const i of indices) {
-    const ref = `verif-ref-${String(i).padStart(5, '0')}.jpg`;
-    await photoA(p, i / fps, path.join(TMP, ref));
+    const ref = `verify-ref-${String(i).padStart(5, '0')}.jpg`;
+    await shotAt(p, i / fps, path.join(TMP, ref));
     let dec = null;
     if (ff) {
-      dec = `verif-dec-${String(i).padStart(5, '0')}.png`;
-      await executer(ff.ffmpeg, ['-v', 'error', '-y', '-ss', ((i - 0.5) / fps).toFixed(4), '-i', mp4, '-frames:v', '1',
+      dec = `verify-dec-${String(i).padStart(5, '0')}.png`;
+      await run(ff.ffmpeg, ['-v', 'error', '-y', '-ss', ((i - 0.5) / fps).toFixed(4), '-i', mp4, '-frames:v', '1',
         '-vf', 'scale=in_color_matrix=bt709:in_range=tv:flags=accurate_rnd+full_chroma_int', path.join(TMP, dec)]);
     }
-    paires.push({ i, t: +(i / fps).toFixed(3), ref: '/frames/' + ref, dec: dec && '/frames/' + dec });
+    pairs.push({ i, t: +(i / fps).toFixed(3), ref: '/frames/' + ref, dec: dec && '/frames/' + dec });
   }
-  await p.taille(1280, 560, 1);
-  await p.aller(`${BASE}/_outils/verifier.html`);
-  const r = await p.js(`verifier(${JSON.stringify({ paires, video: ff ? null : '/out/' + MP4, fps })})`);
-  if (r.erreur) throw new Error('vérification impossible : ' + r.erreur);
-  await p.photo(path.join(OUT, `verification-${LANG}.png`));
-  const largeur = info ? info.largeur : r.largeur, hauteur = info ? info.hauteur : r.hauteur, duree = info ? info.duree : r.duree;
-  const pbs = [];
-  if (largeur !== 1920 || hauteur !== 1080) pbs.push(`taille ${largeur} x ${hauteur} au lieu de 1920 x 1080`);
-  if (Math.abs(duree - n / fps) > 2 / fps) pbs.push(`durée ${duree} s au lieu de ${(n / fps).toFixed(3)} s`);
-  if (info && Math.abs(info.fps - fps) > 0.01) pbs.push(`${info.fps} images par seconde au lieu de ${fps}`);
-  if (info && info.images !== n) pbs.push(`${info.images} images au lieu de ${n}`);
-  const seuil = ff ? 3 : 5;
+  await p.size(1280, 560, 1);
+  await p.goto(`${BASE}/_scripts/verify.html`);
+  const r = await p.js(`verify(${JSON.stringify({ pairs, video: ff ? null : '/out/' + MP4, fps })})`);
+  if (r.error) throw new Error('verification impossible: ' + r.error);
+  await p.screenshot(path.join(OUT, `verification-${LANG}.png`));
+  const width = info ? info.width : r.width, height = info ? info.height : r.height, duration = info ? info.duration : r.duration;
+  const issues = [];
+  if (width !== 1920 || height !== 1080) issues.push(`size ${width} x ${height} instead of 1920 x 1080`);
+  if (Math.abs(duration - n / fps) > 2 / fps) issues.push(`duration ${duration} s instead of ${(n / fps).toFixed(3)} s`);
+  if (info && Math.abs(info.fps - fps) > 0.01) issues.push(`${info.fps} frames per second instead of ${fps}`);
+  if (info && info.frames !== n) issues.push(`${info.frames} frames instead of ${n}`);
+  const threshold = ff ? 3 : 5;
   for (const q of r.points) {
-    if (q.noire) pbs.push(`image noire ou vide à ${q.t} s`);
-    if (q.ecartMoyen > seuil) pbs.push(`écart moyen de ${q.ecartMoyen} à ${q.t} s (attendu sous ${seuil})`);
+    if (q.black) issues.push(`black or empty frame at ${q.t} s`);
+    if (q.meanDiff > threshold) issues.push(`mean difference of ${q.meanDiff} at ${q.t} s (expected below ${threshold})`);
   }
-  if (!r.toutesDifferentes) pbs.push('deux images échantillonnées identiques : le film semble figé');
-  console.log('vérification : ' + JSON.stringify({ ffprobe: info, decodeur: ff ? 'ffmpeg' : 'navigateur',
-    points: r.points.map(q => ({ t: q.t, ecartMoyen: q.ecartMoyen, ecartMax: q.ecartMax, luminance: q.luminance })) }));
-  console.log(`vérification : out/verification-${LANG}.png, image décodée pleine taille dans out/`);
-  if (pbs.length) throw new Error('vérification en échec : ' + pbs.join(' ; '));
-  console.log(`vérification OK : ${largeur} x ${hauteur}, ${duree} s, ${info ? info.fps + ' i/s, ' + info.images + ' images, ' : ''}écart moyen max ${Math.max(...r.points.map(q => q.ecartMoyen))}`);
+  if (!r.allDifferent) issues.push('two sampled frames are identical: the film looks frozen');
+  console.log('verification: ' + JSON.stringify({ ffprobe: info, decoder: ff ? 'ffmpeg' : 'browser',
+    points: r.points.map(q => ({ t: q.t, meanDiff: q.meanDiff, maxDiff: q.maxDiff, luminance: q.luminance })) }));
+  console.log(`verification: out/verification-${LANG}.png, full-size decoded frame in out/`);
+  if (issues.length) throw new Error('verification failed: ' + issues.join('; '));
+  console.log(`verification OK: ${width} x ${height}, ${duration} s, ${info ? info.fps + ' fps, ' + info.frames + ' frames, ' : ''}max mean difference ${Math.max(...r.points.map(q => q.meanDiff))}`);
 }
 
-async function miniature(p) {
-  if (!fs.existsSync(path.join(FILM, 'miniature.html'))) throw new Error('miniature.html introuvable dans ' + FILM);
-  await p.taille(1280, 720, 1);
-  await p.aller(`${BASE}/miniature.html?lang=${LANG}`);
-  await p.attendre('window.READY && true');
+async function thumbnail(p) {
+  if (!fs.existsSync(path.join(FILM, 'thumbnail.html'))) throw new Error('thumbnail.html not found in ' + FILM);
+  await p.size(1280, 720, 1);
+  await p.goto(`${BASE}/thumbnail.html?lang=${LANG}`);
+  await p.waitFor('window.READY && true');
   await p.js('window.READY');
-  await controlerChargement(p);
-  const jpg = path.join(OUT, `${NOM}-${LANG}-miniature.jpg`);
-  await p.photo(jpg, { format: 'jpeg', quality: 92 });
-  await p.photo(path.join(OUT, `${NOM}-${LANG}-miniature.png`));
-  console.log(`miniature : out/${NOM}-${LANG}-miniature.jpg (${Math.round(fs.statSync(jpg).size / 1024)} Ko, limite YouTube 2 Mo) et .png`);
+  await checkLoading(p);
+  const jpg = path.join(OUT, `${NAME}-${LANG}-thumbnail.jpg`);
+  await p.screenshot(jpg, { format: 'jpeg', quality: 92 });
+  await p.screenshot(path.join(OUT, `${NAME}-${LANG}-thumbnail.png`));
+  console.log(`thumbnail: out/${NAME}-${LANG}-thumbnail.jpg (${Math.round(fs.statSync(jpg).size / 1024)} KB, YouTube limit 2 MB) and .png`);
 }
 
 (async () => {
-  if (!fs.existsSync(path.join(FILM, 'film.html'))) throw new Error('film.html introuvable dans ' + FILM);
-  const CHARTE = path.join(FILM, 'charte.css');
-  if (!fs.existsSync(CHARTE)) throw new Error('charte.css introuvable dans ' + FILM + ' : copier modele/charte.css et la remplir (references/charte.md)');
-  if (fs.readFileSync(CHARTE, 'utf8').includes('CHARTE-NON-REMPLIE')) throw new Error('charte.css est encore le gabarit : relever la charte du projet (references/charte.md), puis retirer la ligne CHARTE-NON-REMPLIE');
+  if (!fs.existsSync(path.join(FILM, 'film.html'))) throw new Error('film.html not found in ' + FILM);
+  const BRAND = path.join(FILM, 'brand.css');
+  if (!fs.existsSync(BRAND)) throw new Error('brand.css not found in ' + FILM + ': copy template/brand.css and fill it in (references/brand.md)');
+  if (fs.readFileSync(BRAND, 'utf8').includes('BRAND-NOT-FILLED')) throw new Error('brand.css is still the template: extract the project brand (references/brand.md), then remove the BRAND-NOT-FILLED line');
   fs.mkdirSync(OUT, { recursive: true });
   const t0 = Date.now();
-  const srv = await serveur();
-  const { nav, onglet: p, fermer } = await lancer();
+  const srv = await server();
+  const { browser, tab: p, close } = await launch();
   try {
-    if (MODE === 'planche') await planche(p, A4.split(',').filter(Boolean).map(Number));
-    else if (MODE === 'video') { const fps = await images(nav, p); await encoder(p, fps); }
-    else if (MODE === 'encoder') { await ouvrirFilm(p); await encoder(p, await p.js('window.FPS')); }
-    else if (MODE === 'verifier') await verifier(p);
-    else if (MODE === 'affiche') {
-      if (!Number.isFinite(parseFloat(A4))) throw new Error('instant manquant : node render.js <dossier> affiche <t> [lang]');
-      await ouvrirFilm(p);
-      await photoA(p, +A4, path.join(OUT, `${NOM}-${LANG}-affiche.jpg`), 90);
-      console.log(`affiche : out/${NOM}-${LANG}-affiche.jpg (t = ${A4} s)`);
-    } else if (MODE === 'miniature') await miniature(p);
-  } finally { await fermer(); srv.close(); }
-  console.log(`${MODE} terminé en ${secondes(t0)}`);
-})().catch(e => { console.error('ECHEC ' + e.message); process.exit(1); });
+    if (MODE === 'contact-sheet') await contactSheet(p, A4.split(',').filter(Boolean).map(Number));
+    else if (MODE === 'video') { const fps = await renderFrames(browser, p); await encode(p, fps); }
+    else if (MODE === 'encode') { await openFilm(p); await encode(p, await p.js('window.FPS')); }
+    else if (MODE === 'verify') await verify(p);
+    else if (MODE === 'poster') {
+      if (!Number.isFinite(parseFloat(A4))) throw new Error('missing time: node render.js <folder> poster <t> [lang]');
+      await openFilm(p);
+      await shotAt(p, +A4, path.join(OUT, `${NAME}-${LANG}-poster.jpg`), 90);
+      console.log(`poster: out/${NAME}-${LANG}-poster.jpg (t = ${A4} s)`);
+    } else if (MODE === 'thumbnail') await thumbnail(p);
+  } finally { await close(); srv.close(); }
+  console.log(`${MODE} done in ${seconds(t0)}`);
+})().catch(e => { console.error('FAILED ' + e.message); process.exit(1); });

@@ -1,0 +1,42 @@
+/* BRAND-NOT-FILLED: remove this line once the brand has been extracted from the project (render.js refuses to render otherwise). */
+/* One source comment per value (file and variable, or "measured on /page"). Method: references/brand.md. */
+
+/* Project font: Google Fonts @import first, or @font-face pointing to assets/ within its license.
+   Inter (assets/fonts, OFL license) is the offline fallback. */
+@font-face { font-family: 'Inter'; src: url('assets/fonts/inter-latin-wght.woff2') format('woff2'); font-weight: 100 900; font-display: block; }
+
+:root {
+  --name: "My Product";                    /* text shown when there is no logo */
+  --logo-light: none;                      /* url('assets/logo.svg'): logo for a light background */
+  --logo-dark: none;                       /* url('assets/logo-white.svg'): logo readable on --brand */
+
+  --font-title: 'Inter', system-ui, sans-serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+
+  --brand: #4F46E5;          /* main color (buttons, active links) */
+  --ink: #111827;            /* main text */
+  --bg: #F7F7FB;             /* app page background */
+  --surface: #FFFFFF;        /* cards, fields */
+  --line: #E5E7EB;           /* borders */
+  --muted: #6B7280;          /* grey secondary text */
+  --txt2: #4B5563;           /* subtitles */
+  --accent: #FFD966;         /* highlighted word, thumbnail promise (strong contrast with --brand) */
+  --success: #16A34A; --success-bg: #DCFCE7; --success-ink: #166534;
+  --warning: #E8850C; --warning-bg: #FDF1E3; --warning-ink: #8A5A08;
+
+  --radius-card: 32px;       /* cards, about twice the app's: the film is watched scaled down */
+  --radius-field: 14px;      /* form fields */
+
+  /* derived: override only if the project defines them (active item, hover...) */
+  --brand-deep: color-mix(in srgb, var(--brand) 72%, black);
+  --brand-light: color-mix(in srgb, var(--brand) 70%, white);
+  --tint: color-mix(in srgb, var(--brand) 13%, white);
+  --tint-2: color-mix(in srgb, var(--brand) 7%, white);
+  --on-brand-soft: color-mix(in srgb, var(--brand) 25%, white);
+  --dots: color-mix(in srgb, var(--brand) 20%, white);
+  --track: color-mix(in srgb, var(--brand) 17%, white);
+  --shadow: color-mix(in srgb, var(--brand) 18%, #140F24);
+  --halo-1: color-mix(in srgb, var(--brand) 14%, white);
+  --halo-2: color-mix(in srgb, var(--accent) 32%, white);
+  --halo-3: color-mix(in srgb, var(--brand-light) 10%, #FFE3EE);
+}

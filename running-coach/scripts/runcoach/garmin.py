@@ -32,30 +32,30 @@ def _lib():
     try:
         import garminconnect
     except ImportError as e:
-        raise SourceError("bibliothèque garminconnect absente : lancer install.sh du skill") from e
+        raise SourceError("garminconnect library missing: run the skill's install.sh") from e
     return garminconnect
 
 
 def _wrap(exc: Exception) -> SourceError:
     gc = _lib()
     if isinstance(exc, gc.GarminConnectTooManyRequestsError):
-        return RateLimited("Garmin limite les requêtes : relancer dans quelques minutes")
+        return RateLimited("Garmin is rate limiting requests: retry in a few minutes")
     if isinstance(exc, gc.GarminConnectAuthenticationError):
-        return SourceError("jetons Garmin expirés ou refusés : lancer `coach auth garmin login` dans un terminal")
-    return SourceError(f"Garmin Connect injoignable ({exc})")
+        return SourceError("Garmin tokens expired or rejected: run `coach auth garmin login` in a terminal")
+    return SourceError(f"Garmin Connect unreachable ({exc})")
 
 
 def client(interactive: bool = False):
     gc = _lib()
     if not is_configured() and not interactive:
-        raise SourceError("Garmin n'est pas connecté : lancer `coach auth garmin login` dans un terminal (identifiants + code MFA)")
+        raise SourceError("Garmin is not connected: run `coach auth garmin login` in a terminal (credentials + MFA code)")
     try:
         if is_configured():
             g = gc.Garmin()
         else:
-            email = os.environ.get("GARMIN_EMAIL") or input("E-mail Garmin Connect : ").strip()
-            password = os.environ.get("GARMIN_PASSWORD") or getpass.getpass("Mot de passe Garmin Connect : ")
-            g = gc.Garmin(email, password, prompt_mfa=lambda: input("Code MFA (si demandé) : ").strip())
+            email = os.environ.get("GARMIN_EMAIL") or input("Garmin Connect email: ").strip()
+            password = os.environ.get("GARMIN_PASSWORD") or getpass.getpass("Garmin Connect password: ")
+            g = gc.Garmin(email, password, prompt_mfa=lambda: input("MFA code (if asked): ").strip())
             token_dir().mkdir(parents=True, exist_ok=True)
             os.chmod(token_dir(), 0o700)
         g.login(str(token_dir()))
@@ -63,7 +63,7 @@ def client(interactive: bool = False):
     except SourceError:
         raise
     except EOFError as e:
-        raise SourceError("saisie impossible ici : lancer `coach auth garmin login` dans un terminal") from e
+        raise SourceError("cannot prompt here: run `coach auth garmin login` in a terminal") from e
     except Exception as e:
         raise _wrap(e) from e
 
@@ -72,25 +72,25 @@ def login() -> str:
     if is_configured():
         return status()
     g = client(interactive=True)
-    return f"Garmin : connecté ({g.get_full_name() or 'compte'}), jetons enregistrés dans {token_dir()}"
+    return f"Garmin: connected ({g.get_full_name() or 'account'}), tokens saved in {token_dir()}"
 
 
 def status(check: bool = False) -> str:
     if not is_configured():
-        return "Garmin : non connecté (`coach auth garmin login`, à lancer dans un terminal)"
+        return "Garmin: not connected (`coach auth garmin login`, to run in a terminal)"
     if not check:
-        return f"Garmin : jetons présents dans {token_dir()}"
+        return f"Garmin: tokens present in {token_dir()}"
     g = client()
     try:
         name = g.get_full_name()
     except Exception as e:
         raise _wrap(e) from e
-    return f"Garmin : connecté ({name or 'compte'})"
+    return f"Garmin: connected ({name or 'account'})"
 
 
 def logout() -> str:
     shutil.rmtree(token_dir(), ignore_errors=True)
-    return "Garmin : jetons supprimés"
+    return "Garmin: tokens deleted"
 
 
 def _fit_from_download(data: bytes) -> bytes:
@@ -98,7 +98,7 @@ def _fit_from_download(data: bytes) -> bytes:
         with zipfile.ZipFile(io.BytesIO(data)) as zf:
             name = next((n for n in zf.namelist() if n.lower().endswith(".fit")), None)
             if name is None:
-                raise Skip("archive Garmin sans fichier FIT")
+                raise Skip("Garmin archive without a FIT file")
             return zf.read(name)
     return data
 
@@ -142,7 +142,7 @@ def sync(days: int | None, details: int, index: dict[str, Any], log) -> dict[str
             raw = g.download_activity(sid, dl_fmt=fmt)
             parsed = parse_fit(_fit_from_download(raw), f"garmin-{sid}.fit", sid)[0]
         except Skip as e:
-            log(f"  ! {activity_id} : {e}")
+            log(f"  ! {activity_id}: {e}")
             skip.add(activity_id)
             continue
         except CoachError:
@@ -152,7 +152,7 @@ def sync(days: int | None, details: int, index: dict[str, Any], log) -> dict[str
             if isinstance(err, RateLimited):
                 limited = str(err)
                 break
-            log(f"  ! détails indisponibles pour {activity_id} : {err}")
+            log(f"  ! details unavailable for {activity_id}: {err}")
             skip.add(activity_id)
             continue
         base = store.get(activity_id)
@@ -177,12 +177,12 @@ def push_workout(payload: dict[str, Any], when: str | None) -> str:
     try:
         result = g.upload_workout(payload)
         workout_id = result.get("workoutId")
-        lines = [f"✓ séance créée dans Garmin Connect : {payload['workoutName']} (id {workout_id})"]
+        lines = [f"✓ workout created in Garmin Connect: {payload['workoutName']} (id {workout_id})"]
         if when:
             g.schedule_workout(workout_id, when)
-            lines.append(f"✓ planifiée au {when} : elle arrive sur la montre à la prochaine synchronisation")
+            lines.append(f"✓ scheduled on {when}: it reaches the watch at the next sync")
         else:
-            lines.append("  non planifiée : ajouter --date AAAA-MM-JJ pour la poser au calendrier")
+            lines.append("  not scheduled: add --date YYYY-MM-DD to put it on the calendar")
         return "\n".join(lines)
     except Exception as e:
         raise _wrap(e) from e
@@ -202,4 +202,4 @@ def delete_workout(workout_id: str) -> str:
         g.delete_workout(workout_id)
     except Exception as e:
         raise _wrap(e) from e
-    return f"✓ séance {workout_id} supprimée de Garmin Connect"
+    return f"✓ workout {workout_id} deleted from Garmin Connect"

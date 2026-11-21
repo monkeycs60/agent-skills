@@ -38,9 +38,9 @@ function words(el) {
   return [...el.querySelectorAll('.w > span')];
 }
 
-const charte = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
+const brandVar = (v) => getComputedStyle(document.documentElement).getPropertyValue(v).trim();
 const _pix = Object.assign(document.createElement('canvas'), { width: 1, height: 1 }).getContext('2d', { willReadFrequently: true });
-function couleur(v, a = 1) {
+function color(v, a = 1) {
   const d = document.createElement('i'); d.style.color = `var(${v})`; document.documentElement.appendChild(d);
   const c = getComputedStyle(d).color; d.remove();
   _pix.clearRect(0, 0, 1, 1); _pix.fillStyle = c; _pix.fillRect(0, 0, 1, 1);
@@ -50,53 +50,54 @@ function couleur(v, a = 1) {
 const alpha = (c, a) => rgba([c[0], c[1], c[2], a]);
 function logos() {
   document.querySelectorAll('img[data-logo]').forEach(img => {
-    const m = charte('--logo-' + img.dataset.logo).match(/url\(\s*["']?([^"')]+)/);
+    const m = brandVar('--logo-' + img.dataset.logo).match(/url\(\s*["']?([^"')]+)/);
     if (m) { img.src = m[1]; return; }
     const s = document.createElement('div'), h = parseFloat(img.style.height) || 44;
     s.className = img.className; s.id = img.id; s.style.cssText = img.style.cssText;
     Object.assign(s.style, { height: 'auto', fontFamily: 'var(--font-title)', fontWeight: 900, fontSize: (h * .9) + 'px', lineHeight: h + 'px',
-      letterSpacing: '-.03em', whiteSpace: 'nowrap', color: img.dataset.logo === 'fonce' ? '#fff' : 'var(--ink)' });
-    s.textContent = charte('--nom').replace(/^["']|["']$/g, '');
+      letterSpacing: '-.03em', whiteSpace: 'nowrap', color: img.dataset.logo === 'dark' ? '#fff' : 'var(--ink)' });
+    s.textContent = brandVar('--name').replace(/^["']|["']$/g, '');
     img.replaceWith(s);
   });
 }
-const policesCharte = () => { const t = charte('--font-title'), b = charte('--font-body');
+const brandFonts = () => { const t = brandVar('--font-title'), b = brandVar('--font-body');
   return [`900 60px ${t}`, `800 60px ${t}`, `700 60px ${t}`, `500 30px ${b}`, `700 30px ${b}`]; };
 
-function demarrer({ duree, fps = 60, init, peindre, polices = [], attendre = [] }) {
+function startFilm({ duration, fps = 60, init, paint, fonts = [], waitFor = [] }) {
   const q = new URLSearchParams(location.search);
   const RENDER = q.has('render');
   if (RENDER) document.body.classList.add('render');
-  window.DURATION = duree; window.FPS = fps;
-  // deux images d'attente : sans elles, la photo montre les styles de l'image precedente
-  window.seek = (t) => { peindre(t); return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); };
+  window.DURATION = duration; window.FPS = fps;
+  // wait two frames: without them, the screenshot shows the styles of the previous frame
+  window.seek = (t) => { paint(t); return new Promise(r => requestAnimationFrame(() => requestAnimationFrame(r))); };
   window.READY = (async () => {
-    await Promise.all(polices.map(f => document.fonts.load(f)));
+    await Promise.all(fonts.map(f => document.fonts.load(f)));
     await document.fonts.ready;
     await Promise.all([...document.images].map(i => i.decode().catch(() => {})));
-    await Promise.all(attendre);
-    init(); peindre(0);
+    await Promise.all(waitFor);
+    init(); paint(0);
     return true;
   })();
   if (RENDER) return;
   const st = $('stage'), sc = $('scrub'), tc = $('tc'), pp = $('pp');
-  sc.max = duree;
+  sc.max = duration;
   const fit = () => {
     const k = Math.min(innerWidth / 1920, (innerHeight - 56) / 1080);
     st.style.transform = `scale(${k})`;
     st.style.left = ((innerWidth - 1920 * k) / 2) + 'px'; st.style.top = ((innerHeight - 56 - 1080 * k) / 2) + 'px';
   };
   addEventListener('resize', fit); fit();
+  const PLAY = q.get('lang') === 'fr' ? 'Lecture' : 'Play';
   let playing = true, t0 = performance.now(), tNow = +(q.get('t') || 0);
-  if (tNow) { playing = false; pp.textContent = 'Lecture'; }
-  pp.onclick = () => { playing = !playing; pp.textContent = playing ? 'Pause' : 'Lecture'; t0 = performance.now() - tNow * 1000; };
-  sc.oninput = () => { tNow = +sc.value; t0 = performance.now() - tNow * 1000; peindre(tNow); tc.textContent = tNow.toFixed(2) + ' s'; };
+  if (tNow) { playing = false; pp.textContent = PLAY; }
+  pp.onclick = () => { playing = !playing; pp.textContent = playing ? 'Pause' : PLAY; t0 = performance.now() - tNow * 1000; };
+  sc.oninput = () => { tNow = +sc.value; t0 = performance.now() - tNow * 1000; paint(tNow); tc.textContent = tNow.toFixed(2) + ' s'; };
   window.READY.then(() => {
     t0 = performance.now() - tNow * 1000;
     const loop = (now) => {
-      if (playing) { tNow = ((now - t0) / 1000) % duree; peindre(tNow); sc.value = tNow; tc.textContent = tNow.toFixed(2) + ' s'; }
+      if (playing) { tNow = ((now - t0) / 1000) % duration; paint(tNow); sc.value = tNow; tc.textContent = tNow.toFixed(2) + ' s'; }
       requestAnimationFrame(loop);
     };
-    peindre(tNow); requestAnimationFrame(loop);
+    paint(tNow); requestAnimationFrame(loop);
   });
 }

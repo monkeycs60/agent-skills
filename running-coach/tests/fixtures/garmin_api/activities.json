@@ -1,7 +1,7 @@
 [
  {
   "activityId": 30000000001,
-  "activityName": "Footing",
+  "activityName": "Easy run",
   "startTimeLocal": "2026-10-13 07:05:20",
   "startTimeGMT": "2026-10-13 05:05:20",
   "activityType": {
@@ -18,7 +18,7 @@
  },
  {
   "activityId": 30000000002,
-  "activityName": "Seuil",
+  "activityName": "Threshold",
   "startTimeLocal": "2026-10-15 07:00:00",
   "startTimeGMT": "2026-10-15 05:00:00",
   "activityType": {

@@ -64,19 +64,19 @@ def _request(url: str, data: dict[str, Any] | None = None, token: str | None = N
                 return json.loads(resp.read().decode())
         except urllib.error.HTTPError as e:
             if e.code == 429:
-                raise RateLimited("limite de requêtes Strava atteinte (100 par 15 min) : relancer dans 15 minutes") from e
+                raise RateLimited("Strava rate limit reached (100 per 15 min): retry in 15 minutes") from e
             if e.code in (401, 403):
-                raise SourceError(f"Strava refuse l'accès ({e.code}) : relancer `coach auth strava`") from e
+                raise SourceError(f"Strava refuses access ({e.code}): run `coach auth strava` again") from e
             if e.code >= 500 and attempt < 2:
                 time.sleep(1 + attempt)
                 continue
-            raise SourceError(f"Strava a répondu {e.code} pour {url.split('?')[0]}") from e
+            raise SourceError(f"Strava answered {e.code} for {url.split('?')[0]}") from e
         except (urllib.error.URLError, TimeoutError) as e:
             if attempt < 2:
                 time.sleep(1 + attempt)
                 continue
-            raise SourceError(f"Strava injoignable ({getattr(e, 'reason', e)})") from e
-    raise SourceError("Strava injoignable")
+            raise SourceError(f"Strava unreachable ({getattr(e, 'reason', e)})") from e
+    raise SourceError("Strava unreachable")
 
 
 def authorize_url(client_id: str) -> str:
@@ -98,7 +98,7 @@ def extract_code(value: str) -> str:
 def _store_tokens(creds: dict[str, Any], resp: dict[str, Any]) -> dict[str, Any]:
     for key in ("access_token", "refresh_token", "expires_at"):
         if key not in resp:
-            raise SourceError("réponse Strava inattendue lors de l'échange de jeton")
+            raise SourceError("unexpected Strava response during token exchange")
         creds[key] = resp[key]
     if resp.get("athlete", {}).get("id"):
         creds["athlete_id"] = resp["athlete"]["id"]
@@ -113,22 +113,22 @@ def _store_tokens(creds: dict[str, Any], resp: dict[str, Any]) -> dict[str, Any]
 def exchange_code(code: str) -> dict[str, Any]:
     creds = load_creds()
     if not creds.get("client_id") or not creds.get("client_secret"):
-        raise CoachError("identifiants d'application Strava absents : lancer dans un terminal `coach auth strava --client-id …`")
+        raise CoachError("Strava application credentials missing: run `coach auth strava --client-id …` in a terminal")
     try:
         resp = _request(TOKEN_URL, {"client_id": creds["client_id"], "client_secret": creds["client_secret"],
                                     "code": extract_code(code), "grant_type": "authorization_code"})
     except RateLimited:
         raise
     except SourceError as e:
-        raise CoachError("Strava refuse le code : expiré (quelques minutes), déjà utilisé, ou Client ID/Secret d'une autre "
-                         "application ; relancer `coach auth strava --reauthorize`") from e
+        raise CoachError("Strava rejects the code: expired (a few minutes), already used, or Client ID/Secret of another "
+                         "application; run `coach auth strava --reauthorize`") from e
     return _store_tokens(creds, resp)
 
 
 def access_token() -> str:
     creds = load_creds()
     if not is_configured():
-        raise SourceError("Strava n'est pas connecté : `coach auth strava`")
+        raise SourceError("Strava is not connected: `coach auth strava`")
     if int(creds.get("expires_at", 0)) - 300 > time.time():
         return creds["access_token"]
     try:
@@ -137,21 +137,21 @@ def access_token() -> str:
     except RateLimited:
         raise
     except SourceError as e:
-        if "injoignable" in str(e):
+        if "unreachable" in str(e):
             raise
-        raise SourceError("autorisation Strava révoquée ou expirée : `coach auth strava --reauthorize`, puis `--code`") from e
+        raise SourceError("Strava authorization revoked or expired: `coach auth strava --reauthorize`, then `--code`") from e
     return _store_tokens(creds, resp)["access_token"]
 
 
 def status() -> str:
     creds = load_creds()
     if not creds.get("client_id"):
-        return "Strava : non configuré (`coach auth strava --client-id …`, dans un terminal)"
+        return "Strava: not configured (`coach auth strava --client-id …`, in a terminal)"
     if not creds.get("refresh_token"):
-        return "Strava : application enregistrée, autorisation manquante (`coach auth strava --code <URL de redirection>`)"
+        return "Strava: application registered, authorization missing (`coach auth strava --code <redirect URL>`)"
     remaining = int(creds.get("expires_at", 0) - time.time()) // 60
-    state = f"jeton valide encore {remaining} min" if remaining > 0 else "jeton expiré, rafraîchi automatiquement au prochain appel"
-    return f"Strava : connecté (scope {creds.get('scope', '?')}), {state}"
+    state = f"token valid for {remaining} more min" if remaining > 0 else "token expired, refreshed automatically on the next call"
+    return f"Strava: connected (scope {creds.get('scope', '?')}), {state}"
 
 
 def sync(days: int | None, details: int, index: dict[str, Any], log) -> dict[str, Any]:
@@ -169,7 +169,7 @@ def sync(days: int | None, details: int, index: dict[str, Any], log) -> dict[str
         batch = _request(f"{API}/athlete/activities?" + urllib.parse.urlencode(
             {"after": int(after.timestamp()), "per_page": PER_PAGE, "page": page}), token=token)
         if not isinstance(batch, list):
-            raise SourceError("réponse Strava inattendue pour la liste des activités")
+            raise SourceError("unexpected Strava response for the activity list")
         listed += batch
         if len(batch) < PER_PAGE:
             break
@@ -200,7 +200,7 @@ def sync(days: int | None, details: int, index: dict[str, Any], log) -> dict[str
             limited = str(e)
             break
         except SourceError as e:
-            log(f"  ! détails indisponibles pour {activity_id} : {e}")
+            log(f"  ! details unavailable for {activity_id}: {e}")
             skip.add(activity_id)
             continue
         base = store.get(activity_id)

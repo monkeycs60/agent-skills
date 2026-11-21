@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <title>Coche</title>
 <style>
-@font-face { font-family: 'Inter'; src: url('../modele/assets/polices/inter-latin-wght.woff2') format('woff2'); font-weight: 100 900; font-display: block; }
+@font-face { font-family: 'Inter'; src: url('../template/assets/fonts/inter-latin-wght.woff2') format('woff2'); font-weight: 100 900; font-display: block; }
 :root {
   --primary: #2563EB; --primary-soft: #E7EEFD; --foreground: #0F172A; --background: #F6F7FB; --card: #FFFFFF;
   --border: #E2E8F0; --muted-foreground: #64748B; --secondary-foreground: #475569; --highlight: #FFD166;
@@ -21,35 +21,35 @@ aside { width: 264px; height: 100vh; background: var(--card); border-right: 1px 
 .sect { font-size: 11px; font-weight: 700; letter-spacing: .12em; text-transform: uppercase; color: #8E8E93; padding: 14px 12px 8px; }
 .item { display: flex; align-items: center; gap: 12px; height: 38px; padding: 0 12px; border-radius: 9px; font-size: 14.5px; font-weight: 500; color: var(--foreground); }
 .item svg { width: 18px; height: 18px; }
-.item.actif { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
+.item.active { background: var(--primary-soft); color: var(--primary); font-weight: 600; }
 .item .n { margin-left: auto; min-width: 22px; height: 20px; border-radius: 10px; background: var(--primary-soft); color: var(--primary); font-size: 11.5px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
 main { flex: 1; padding: 0 40px; overflow: hidden; }
-.haut { height: 64px; display: flex; align-items: center; justify-content: space-between; font-size: 13.5px; color: var(--muted-foreground); }
-.haut b { color: var(--foreground); font-weight: 600; }
+.top { height: 64px; display: flex; align-items: center; justify-content: space-between; font-size: 13.5px; color: var(--muted-foreground); }
+.top b { color: var(--foreground); font-weight: 600; }
 .avatar { width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #C7D7FB, #FDE3B5); display: flex; align-items: center; justify-content: center; font-size: 12.5px; font-weight: 700; color: var(--foreground); }
 h1 { font-size: 27px; font-weight: 800; letter-spacing: -.02em; margin: 6px 0 4px; }
 .intro { font-size: 14.5px; color: var(--secondary-foreground); margin: 0 0 22px; }
-.carte { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 28px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(15, 23, 42, .04); }
-.carte h2 { font-size: 17px; font-weight: 700; margin: 0; }
-.tete { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
-.bouton { height: 38px; padding: 0 16px; border-radius: 9px; background: var(--primary); color: #fff; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; border: 0; font-family: inherit; }
+.card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 28px; margin-bottom: 20px; box-shadow: 0 1px 2px rgba(15, 23, 42, .04); }
+.card h2 { font-size: 17px; font-weight: 700; margin: 0; }
+.head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.button { height: 38px; padding: 0 16px; border-radius: 9px; background: var(--primary); color: #fff; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; border: 0; font-family: inherit; }
 label { display: block; font-size: 13.5px; font-weight: 500; margin: 0 0 7px; }
-.champ { height: 44px; border: 1px solid var(--border); border-radius: var(--radius-input); background: var(--card); display: flex; align-items: center; padding: 0 14px; font-size: 14.5px; margin-bottom: 18px; }
-.ligne { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
-.ligne .champ { width: 260px; margin: 0; justify-content: space-between; }
-.pastille { height: 26px; padding: 0 11px 0 8px; border-radius: 13px; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; }
+.field { height: 44px; border: 1px solid var(--border); border-radius: var(--radius-input); background: var(--card); display: flex; align-items: center; padding: 0 14px; font-size: 14.5px; margin-bottom: 18px; }
+.inline { display: flex; align-items: center; gap: 12px; margin-bottom: 18px; }
+.inline .field { width: 260px; margin: 0; justify-content: space-between; }
+.pill { height: 26px; padding: 0 11px 0 8px; border-radius: 13px; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 600; }
 .ok { background: var(--success-bg); color: var(--success-fg); }
-.att { background: var(--warning-bg); color: var(--warning-fg); }
-.point { width: 7px; height: 7px; border-radius: 50%; }
-#lien { height: 54px; border-radius: 10px; background: var(--primary-soft); display: flex; align-items: center; justify-content: space-between; padding: 0 18px; color: var(--primary); font-weight: 700; font-size: 15px; }
+.wait { background: var(--warning-bg); color: var(--warning-fg); }
+.dot { width: 7px; height: 7px; border-radius: 50%; }
+#link { height: 54px; border-radius: 10px; background: var(--primary-soft); display: flex; align-items: center; justify-content: space-between; padding: 0 18px; color: var(--primary); font-weight: 700; font-size: 15px; }
 table { width: 100%; border-collapse: collapse; font-size: 14px; }
 th { text-align: left; font-size: 12px; font-weight: 600; color: var(--muted-foreground); padding: 0 0 10px; border-bottom: 1px solid var(--border); }
 td { padding: 12px 0; border-bottom: 1px solid var(--border); }
 tr:last-child td { border-bottom: 0; }
-.qui { display: flex; align-items: center; gap: 10px; font-weight: 600; }
-.qui i { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 11px; font-weight: 700; }
-.gris { color: var(--muted-foreground); }
-.nouveau { margin-left: auto; height: 20px; padding: 0 7px; border-radius: 6px; background: var(--highlight); color: var(--foreground); font-size: 10.5px; font-weight: 700; display: flex; align-items: center; }
+.who { display: flex; align-items: center; gap: 10px; font-weight: 600; }
+.who i { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-style: normal; font-size: 11px; font-weight: 700; }
+.grey { color: var(--muted-foreground); }
+.new { margin-left: auto; height: 20px; padding: 0 7px; border-radius: 6px; background: var(--highlight); color: var(--foreground); font-size: 10.5px; font-weight: 700; display: flex; align-items: center; }
 </style>
 </head>
 <body>
@@ -62,36 +62,36 @@ tr:last-child td { border-bottom: 0; }
   <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M9 7h11M9 12h11M9 17h11M4.5 7h.5M4.5 12h.5M4.5 17h.5"/></svg><span data-k="projects"></span></div>
   <div class="sect" style="padding-top:22px" data-k="tools"></div>
   <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8.5 16v-4M12 16V8.5M15.5 16v-6"/></svg><span data-k="reports"></span></div>
-  <div class="item actif" data-item="inviter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 7.5H7.5a4.5 4.5 0 0 0 0 9H10M14 7.5h2.5a4.5 4.5 0 0 1 0 9H14M8.5 12h7"/></svg><span data-k="invite"></span></div>
-  <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6"/><circle cx="16.5" cy="8" r="2.5"/><path d="M16 13.2c2.3 0 4 1.3 4.5 3.8"/></svg><span data-k="spaces"></span><span class="nouveau" data-k="new"></span></div>
+  <div class="item active" data-item="invite"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M10 7.5H7.5a4.5 4.5 0 0 0 0 9H10M14 7.5h2.5a4.5 4.5 0 0 1 0 9H14M8.5 12h7"/></svg><span data-k="invite"></span></div>
+  <div class="item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="3.2"/><path d="M3.5 19c.6-3 2.8-4.6 5.5-4.6s4.9 1.6 5.5 4.6"/><circle cx="16.5" cy="8" r="2.5"/><path d="M16 13.2c2.3 0 4 1.3 4.5 3.8"/></svg><span data-k="spaces"></span><span class="new" data-k="new"></span></div>
 </aside>
 <main>
-  <div class="haut"><span><span data-k="tools_cap"></span> &rsaquo; <b data-k="invite"></b></span><span class="avatar">LM</span></div>
+  <div class="top"><span><span data-k="tools_cap"></span> &rsaquo; <b data-k="invite"></b></span><span class="avatar">LM</span></div>
   <h1 data-k="title"></h1>
   <p class="intro" data-k="intro"></p>
-  <div class="carte">
-    <div class="tete"><h2 data-k="settings"></h2>
-      <button class="bouton"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 7l8 6 8-6"/></svg><span data-k="by_email"></span></button>
+  <div class="card">
+    <div class="head"><h2 data-k="settings"></h2>
+      <button class="button"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 7l8 6 8-6"/></svg><span data-k="by_email"></span></button>
     </div>
     <label data-k="list_url"></label>
-    <div class="champ"><span>https://coche.example/listes/lancement</span>
+    <div class="field"><span data-k="list_url_value"></span>
       <svg style="margin-left:auto;color:var(--muted-foreground)" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
     <label data-k="space"></label>
-    <div class="ligne">
-      <div class="champ"><span data-k="space_name"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div>
-      <span class="pastille ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span data-k="auto"></span></span>
+    <div class="inline">
+      <div class="field"><span data-k="space_name"></span><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg></div>
+      <span class="pill ok"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span data-k="auto"></span></span>
     </div>
     <label style="margin-bottom:14px" data-k="invite_link"></label>
-    <div id="lien"><span>https://coche.example/rejoindre/lancement?code=K7Q2</span>
+    <div id="link"><span data-k="link_value"></span>
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="8.5" y="8.5" width="11.5" height="11.5" rx="2"/><path d="M5 15.5V5.5a1.5 1.5 0 0 1 1.5-1.5h9.5"/></svg></div>
   </div>
-  <div class="carte">
-    <div class="tete" style="margin-bottom:12px"><h2 data-k="sent"></h2></div>
+  <div class="card">
+    <div class="head" style="margin-bottom:12px"><h2 data-k="sent"></h2></div>
     <table>
       <tr><th data-k="member"></th><th data-k="email"></th><th data-k="status"></th></tr>
-      <tr><td><span class="qui"><i style="background:#FDE3B5">LM</i>Léa Martin</span></td><td class="gris">lea@example.com</td><td><span class="pastille ok"><span class="point" style="background:var(--success)"></span><span data-k="accepted"></span></span></td></tr>
-      <tr><td><span class="qui"><i style="background:#D9E6FD">SR</i>Sam Roux</span></td><td class="gris">sam@example.com</td><td><span class="pastille att"><span class="point" style="background:var(--warning)"></span><span data-k="pending"></span></span></td></tr>
-      <tr><td><span class="qui"><i style="background:#DCF5E4">NB</i>Noé Bernard</span></td><td class="gris">noe@example.com</td><td><span class="pastille ok"><span class="point" style="background:var(--success)"></span><span data-k="accepted"></span></span></td></tr>
+      <tr><td><span class="who"><i style="background:#FDE3B5">LM</i>Léa Martin</span></td><td class="grey">lea@example.com</td><td><span class="pill ok"><span class="dot" style="background:var(--success)"></span><span data-k="accepted"></span></span></td></tr>
+      <tr><td><span class="who"><i style="background:#D9E6FD">SR</i>Sam Roux</span></td><td class="grey">sam@example.com</td><td><span class="pill wait"><span class="dot" style="background:var(--warning)"></span><span data-k="pending"></span></span></td></tr>
+      <tr><td><span class="who"><i style="background:#DCF5E4">NB</i>Noé Bernard</span></td><td class="grey">noe@example.com</td><td><span class="pill ok"><span class="dot" style="background:var(--success)"></span><span data-k="accepted"></span></span></td></tr>
     </table>
   </div>
 </main>
@@ -101,16 +101,18 @@ const TXT = {
     tools_cap: 'Outils', reports: 'Rapports', invite: 'Inviter', spaces: 'Espaces', new: 'NOUVEAU', title: 'Inviter dans une liste',
     intro: 'Partagez une liste avec les membres de votre espace.', settings: 'Paramètres généraux', by_email: 'Inviter par e-mail',
     list_url: 'Adresse de la liste', space: 'Espace', auto: 'Reconnu automatiquement', invite_link: 'Lien d’invitation',
+    list_url_value: 'https://coche.example/listes/lancement', link_value: 'https://coche.example/rejoindre/lancement?code=K7Q2',
     sent: 'Invitations envoyées', space_name: 'Équipe Produit', member: 'Membre', email: 'E-mail', status: 'Statut', accepted: 'Acceptée', pending: 'En attente' },
   en: { general: 'General', today: 'Today', inbox: 'Inbox', calendar: 'Calendar', projects: 'Projects', tools: 'Tools',
     tools_cap: 'Tools', reports: 'Reports', invite: 'Invite', spaces: 'Spaces', new: 'NEW', title: 'Invite to a list',
     intro: 'Share a list with the members of your space.', settings: 'General settings', by_email: 'Invite by email',
     list_url: 'List address', space: 'Space', auto: 'Recognized automatically', invite_link: 'Invite link',
+    list_url_value: 'https://coche.example/lists/launch', link_value: 'https://coche.example/join/launch?code=K7Q2',
     sent: 'Invitations sent', space_name: 'Product Team', member: 'Member', email: 'Email', status: 'Status', accepted: 'Accepted', pending: 'Pending' }
 };
-const LANG = new URLSearchParams(location.search).get('lang') || 'fr';
+const LANG = new URLSearchParams(location.search).get('lang') || 'en';
 document.documentElement.lang = LANG;
-document.querySelectorAll('[data-k]').forEach(e => { e.textContent = (TXT[LANG] || TXT.fr)[e.dataset.k]; });
+document.querySelectorAll('[data-k]').forEach(e => { e.textContent = (TXT[LANG] || TXT.en)[e.dataset.k]; });
 </script>
 </body>
 </html>

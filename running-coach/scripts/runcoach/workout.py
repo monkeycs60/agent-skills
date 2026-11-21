@@ -11,7 +11,7 @@ STEP_TYPES = {
     "recovery": (4, "recovery"),
     "rest": (5, "rest"),
 }
-KIND_FR = {"warmup": "échauffement", "cooldown": "retour au calme", "interval": "course", "recovery": "récupération", "rest": "repos"}
+KIND_LABELS = {"warmup": "warm-up", "cooldown": "cool-down", "interval": "run", "recovery": "recovery", "rest": "rest"}
 END_TIME = {"conditionTypeId": 2, "conditionTypeKey": "time", "displayOrder": 2, "displayable": True}
 END_DIST = {"conditionTypeId": 3, "conditionTypeKey": "distance", "displayOrder": 3, "displayable": True}
 END_LAP = {"conditionTypeId": 1, "conditionTypeKey": "lap.button", "displayOrder": 1, "displayable": True}
@@ -27,48 +27,48 @@ DEFAULT_PACE_S = 330.0
 
 def _check_step(step: Any, path: str) -> None:
     if not isinstance(step, dict):
-        raise CoachError(f"{path} : une étape est un objet JSON")
+        raise CoachError(f"{path}: a step is a JSON object")
     kind = step.get("kind")
     if kind == "repeat":
         if not isinstance(step.get("times"), int) or step["times"] < 1:
-            raise CoachError(f"{path} : repeat exige times (entier ≥ 1)")
+            raise CoachError(f"{path}: repeat requires times (integer ≥ 1)")
         if not step.get("steps"):
-            raise CoachError(f"{path} : repeat exige steps")
+            raise CoachError(f"{path}: repeat requires steps")
         for i, sub in enumerate(step["steps"]):
             if isinstance(sub, dict) and sub.get("kind") == "repeat":
-                raise CoachError(f"{path}.steps[{i}] : un repeat ne peut pas contenir de repeat")
+                raise CoachError(f"{path}.steps[{i}]: a repeat cannot contain a repeat")
             _check_step(sub, f"{path}.steps[{i}]")
         return
     if kind not in STEP_TYPES:
-        raise CoachError(f"{path} : kind inconnu {kind!r} ({', '.join(list(STEP_TYPES) + ['repeat'])})")
+        raise CoachError(f"{path}: unknown kind {kind!r} ({', '.join(list(STEP_TYPES) + ['repeat'])})")
     ends = [k for k in ("dur", "dist", "lap") if step.get(k) not in (None, False)]
     if len(ends) != 1:
-        raise CoachError(f"{path} : exactement une fin parmi dur (\"mm:ss\"), dist (mètres) ou lap (true)")
+        raise CoachError(f"{path}: exactly one end among dur (\"mm:ss\"), dist (metres) or lap (true)")
     if "dur" in ends:
         parse_duration(step["dur"])
     if "dist" in ends and (not isinstance(step["dist"], (int, float)) or step["dist"] <= 0):
-        raise CoachError(f"{path} : dist en mètres, nombre positif")
+        raise CoachError(f"{path}: dist in metres, positive number")
     target = step.get("target")
     if target is None or target.get("open"):
         return
     if "pace" in target:
         if len(target["pace"]) != 2:
-            raise CoachError(f"{path} : target.pace = [\"m:ss\", \"m:ss\"]")
+            raise CoachError(f"{path}: target.pace = [\"m:ss\", \"m:ss\"]")
         for p in target["pace"]:
             parse_pace(p)
     elif "hr" in target:
         lo, hi = target["hr"]
         if not (40 <= min(lo, hi) and max(lo, hi) <= 230):
-            raise CoachError(f"{path} : target.hr = [bas, haut] en bpm")
+            raise CoachError(f"{path}: target.hr = [low, high] in bpm")
     else:
-        raise CoachError(f"{path} : target = {{\"pace\": […]}}, {{\"hr\": […]}} ou {{\"open\": true}}")
+        raise CoachError(f"{path}: target = {{\"pace\": […]}}, {{\"hr\": […]}} or {{\"open\": true}}")
 
 
 def validate(spec: Any) -> dict[str, Any]:
     if not isinstance(spec, dict) or not spec.get("name"):
-        raise CoachError("la séance exige un champ name")
+        raise CoachError("the workout requires a name field")
     if not spec.get("steps"):
-        raise CoachError("la séance exige une liste steps non vide")
+        raise CoachError("the workout requires a non-empty steps list")
     for i, step in enumerate(spec["steps"]):
         _check_step(step, f"steps[{i}]")
     return spec
@@ -151,12 +151,12 @@ def payload(spec: dict[str, Any]) -> dict[str, Any]:
 
 def _target_text(target: dict | None) -> str:
     if not target or target.get("open"):
-        return "libre"
+        return "open"
     if "pace" in target:
         a, b = sorted(parse_pace(p) for p in target["pace"])
         return f"{fmt_pace(a)}–{fmt_pace(b)}/km"
     lo, hi = sorted(target["hr"])
-    return f"FC {lo:.0f}–{hi:.0f}"
+    return f"HR {lo:.0f}–{hi:.0f}"
 
 
 def _step_text(step: dict[str, Any]) -> str:
@@ -168,14 +168,14 @@ def _step_text(step: dict[str, Any]) -> str:
     elif "dist" in step:
         end = f"{step['dist']:g} m" if step["dist"] < 2000 else f"{step['dist'] / 1000:g} km"
     else:
-        end = "jusqu'au tour"
-    return f"{KIND_FR[step['kind']]} {end} @ {_target_text(step.get('target'))}"
+        end = "until lap button"
+    return f"{KIND_LABELS[step['kind']]} {end} @ {_target_text(step.get('target'))}"
 
 
 def describe(spec: dict[str, Any]) -> str:
     validate(spec)
     seconds = sum(_step_seconds(s) for s in spec["steps"])
     meters = sum(_step_meters(s) for s in spec["steps"])
-    lines = [f"**{spec['name']}** — environ {fmt_hms(seconds)}, {meters / 1000:.1f} km"]
+    lines = [f"**{spec['name']}** — about {fmt_hms(seconds)}, {meters / 1000:.1f} km"]
     lines += [f"- {_step_text(s)}" for s in spec["steps"]]
     return "\n".join(lines)

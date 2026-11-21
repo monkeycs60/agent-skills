@@ -32,14 +32,14 @@ find_agent_browser() {
 
 bin="$(find_agent_browser || true)"
 if [ -z "$bin" ] || [ ! -x "$bin" ]; then
-  echo "ab: agent-browser introuvable. Lancer install.sh du skill chrome-pilot, ou définir AGENT_BROWSER_BIN." >&2
+  echo "ab: agent-browser not found. Run the chrome-pilot skill's install.sh, or set AGENT_BROWSER_BIN." >&2
   exit 127
 fi
 
 for arg in "$@"; do
   case "$arg" in
     --session|--session=*|--cdp|--cdp=*|--auto-connect|--no-auto-connect)
-      echo "ab: $arg est fixé par le wrapper. Utiliser AB_SESSION=<nom>, AB_ISOLATED=1 ou AB_CDP=<port|url>." >&2
+      echo "ab: $arg is set by the wrapper. Use AB_SESSION=<name>, AB_ISOLATED=1 or AB_CDP=<port|url>." >&2
       exit 2 ;;
   esac
 done
@@ -71,7 +71,7 @@ case "${1:-}" in
   close|quit|exit)
     for arg in "$@"; do
       if [ "$arg" = --all ]; then
-        echo "ab: close --all fermerait les navigateurs des autres conversations. ab close ferme seulement celui de cette conversation." >&2
+        echo "ab: close --all would close the other conversations' browsers. ab close only closes this conversation's own." >&2
         exit 2
       fi
     done
@@ -110,6 +110,6 @@ if [ "$status" -ne 0 ] && grep -q tab_gone "$err"; then
 fi
 cat "$err" >&2
 if [ "$status" -ne 0 ] && grep -q -E "No running Chrome|DevToolsActivePort|Failed to connect" "$err"; then
-  echo "ab: Chrome n'est pas joignable. Il doit être ouvert, avec le débogage à distance autorisé dans chrome://inspect/#remote-debugging, et la demande de connexion acceptée. Pour une page qui n'exige aucune connexion : AB_ISOLATED=1 ab …" >&2
+  echo "ab: Chrome is unreachable. It must be open, with remote debugging allowed in chrome://inspect/#remote-debugging, and the connection prompt accepted. For a page that needs no login: AB_ISOLATED=1 ab …" >&2
 fi
 exit "$status"

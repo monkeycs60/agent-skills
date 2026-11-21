@@ -3,7 +3,7 @@
   "summarizedActivitiesExport": [
    {
     "activityId": 20000000001,
-    "name": "S\u00e9ance",
+    "name": "Workout",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1788238800000.0,
@@ -20,7 +20,7 @@
    },
    {
     "activityId": 20000000002,
-    "name": "V\u00e9lo",
+    "name": "Bike",
     "activityType": "cycling",
     "sportType": "CYCLING",
     "startTimeGmt": 1788366600000.0,
@@ -37,7 +37,7 @@
    },
    {
     "activityId": 20000000003,
-    "name": "Footing",
+    "name": "Easy run",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1788411600000.0,
@@ -54,7 +54,7 @@
    },
    {
     "activityId": 20000000004,
-    "name": "Footing",
+    "name": "Easy run",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1788591600000.0,
@@ -71,7 +71,7 @@
    },
    {
     "activityId": 20000000005,
-    "name": "Sortie longue",
+    "name": "Long run",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1788678000000.0,
@@ -88,7 +88,7 @@
    },
    {
     "activityId": 20000000006,
-    "name": "S\u00e9ance",
+    "name": "Workout",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1788843600000.0,
@@ -105,7 +105,7 @@
    },
    {
     "activityId": 20000000007,
-    "name": "V\u00e9lo",
+    "name": "Bike",
     "activityType": "cycling",
     "sportType": "CYCLING",
     "startTimeGmt": 1788971400000.0,
@@ -122,7 +122,7 @@
    },
    {
     "activityId": 20000000008,
-    "name": "Footing",
+    "name": "Easy run",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1789016400000.0,
@@ -139,7 +139,7 @@
    },
    {
     "activityId": 20000000009,
-    "name": "Footing",
+    "name": "Easy run",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1789196400000.0,
@@ -156,7 +156,7 @@
    },
    {
     "activityId": 20000000010,
-    "name": "Sortie longue",
+    "name": "Long run",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1789282800000.0,
@@ -173,7 +173,7 @@
    },
    {
     "activityId": 20000000011,
-    "name": "S\u00e9ance",
+    "name": "Workout",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1789448400000.0,
@@ -190,7 +190,7 @@
    },
    {
     "activityId": 20000000012,
-    "name": "V\u00e9lo",
+    "name": "Bike",
     "activityType": "cycling",
     "sportType": "CYCLING",
     "startTimeGmt": 1789576200000.0,
@@ -207,7 +207,7 @@
    },
    {
     "activityId": 20000000013,
-    "name": "Footing",
+    "name": "Easy run",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1789621200000.0,
@@ -224,7 +224,7 @@
    },
    {
     "activityId": 20000000014,
-    "name": "Footing",
+    "name": "Easy run",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1789801200000.0,
@@ -241,7 +241,7 @@
    },
    {
     "activityId": 20000000015,
-    "name": "Sortie longue",
+    "name": "Long run",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1789887600000.0,
@@ -258,7 +258,7 @@
    },
    {
     "activityId": 20000000016,
-    "name": "S\u00e9ance",
+    "name": "Workout",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1790053200000.0,
@@ -275,7 +275,7 @@
    },
    {
     "activityId": 20000000017,
-    "name": "V\u00e9lo",
+    "name": "Bike",
     "activityType": "cycling",
     "sportType": "CYCLING",
     "startTimeGmt": 1790181000000.0,
@@ -292,7 +292,7 @@
    },
    {
     "activityId": 20000000018,
-    "name": "Footing",
+    "name": "Easy run",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1790226000000.0,
@@ -309,7 +309,7 @@
    },
    {
     "activityId": 20000000019,
-    "name": "Footing",
+    "name": "Easy run",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1790406000000.0,
@@ -326,7 +326,7 @@
    },
    {
     "activityId": 20000000020,
-    "name": "Sortie longue",
+    "name": "Long run",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1790492400000.0,
@@ -343,7 +343,7 @@
    },
    {
     "activityId": 20000000021,
-    "name": "S\u00e9ance",
+    "name": "Workout",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1790658000000.0,
@@ -360,7 +360,7 @@
    },
    {
     "activityId": 20000000022,
-    "name": "V\u00e9lo",
+    "name": "Bike",
     "activityType": "cycling",
     "sportType": "CYCLING",
     "startTimeGmt": 1790785800000.0,
@@ -377,7 +377,7 @@
    },
    {
     "activityId": 20000000023,
-    "name": "Footing",
+    "name": "Easy run",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1790830800000.0,
@@ -394,7 +394,7 @@
    },
    {
     "activityId": 20000000024,
-    "name": "Footing",
+    "name": "Easy run",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1791010800000.0,
@@ -411,7 +411,7 @@
    },
    {
     "activityId": 20000000025,
-    "name": "Sortie longue",
+    "name": "Long run",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1791097200000.0,
@@ -428,7 +428,7 @@
    },
    {
     "activityId": 20000000026,
-    "name": "Footing",
+    "name": "Easy run",
     "activityType": "running",
     "sportType": "RUNNING",
     "startTimeGmt": 1791435630000.0,

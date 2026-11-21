@@ -3,117 +3,121 @@ name: explainer-video
 description: Builds a short motion-design explainer video in code (1080p, 60 fps, silent MP4) for a feature or doc of any project, in the project's own visual identity, with a YouTube kit, or edits one. Use for "make a video of X", "animate this tutorial", or /explainer-video.
 ---
 
-# Vidéo explicative en motion design, pour n'importe quel projet
+# Motion-design explainer video, for any project
 
-Une vidéo est une **page HTML animée** : `peindre(t)` dessine chaque instant, Chrome la photographie
-image par image, puis ffmpeg (ou Chrome lui-même) l'encode en MP4 H.264. Format : **1920 x 1080,
-60 i/s, muet, environ 7 s par étape, pauses comprises** ; la lisibilité passe avant la brièveté.
-Modèle de référence à lire avant tout : `modele/film.html` (produit fictif « Coche » : inviter son
-équipe sur une liste partagée).
+Answer the user, and write every report or deliverable, in the language of the user's request,
+whatever the language of this skill's files. On-screen text follows the language of the project
+or the one the user asks for.
 
-Principe qui fait la qualité : **une seule forme traverse tout le film sans jamais couper** (plein
-écran `--brand`, bouton, pastille, champ, résultat, cadre sur l'écran réel, plein écran). Toute
-l'identité visuelle vient d'un seul fichier, `charte.css`, relevé dans le projet.
+A video is an **animated HTML page**: `paint(t)` draws each instant, Chrome photographs it frame
+by frame, then ffmpeg (or Chrome itself) encodes it to H.264 MP4. Format: **1920 x 1080, 60 fps,
+silent, about 7 s per step, pauses included**; readability comes before brevity. Reference to read
+before anything else: `template/film.html` (fictional product "Coche": invite your team to a shared
+list).
 
-## Avant de commencer
+What makes the quality: **a single shape runs through the whole film without ever cutting**
+(full screen `--brand`, button, chip, field, result, frame on the real screen, full screen). The
+whole visual identity comes from one file, `brand.css`, extracted from the project.
 
-- `S` = dossier `scripts/` de ce skill (en général `~/.claude/skills/explainer-video/scripts`).
-- **Outils** : `node $S/outils.js` vérifie Node 20+, trouve Chrome ou Chromium (sinon `CHROME_PATH`)
-  et ffmpeg (facultatif, recommandé), et dit quoi installer. Aucun paquet npm. Détail, variables et
-  temps de rendu : `references/outils.md`.
-- **Première fois sur une machine** : `node $S/exemple.js` fabrique le film d'exemple de bout en bout
-  (2 à 4 min) dans `~/explainer-videos/coche/inviter-equipe/`. C'est le test de la chaîne.
-- Entrées : URL de doc, Markdown, README, ticket, description ou parcours dans l'app. Sujet flou :
-  demander **quoi montrer et à qui**, le reste se déduit du code.
-- Le dépôt du projet et, idéalement, l'app qui tourne sur des données fictives.
-- Dossiers : film dans `$EXPLAINER_VIDEO_DIR/<projet>/<slug>/` (défaut `~/explainer-videos/`,
-  **hors du dépôt**) ; charte partagée `.../<projet>/charte.css` ; images intermédiaires dans
-  `FRAMES_DIR` (dossier temporaire par défaut, environ 200 Mo par film).
+## Before you start
+
+- `S` = this skill's `scripts/` folder (usually `~/.claude/skills/explainer-video/scripts`).
+- **Tools**: `node $S/tools.js` checks Node 20+, finds Chrome or Chromium (otherwise `CHROME_PATH`)
+  and ffmpeg (optional, recommended), and says what to install. No npm package. Details, variables
+  and render times: `references/tools.md`.
+- **First time on a machine**: `node $S/example.js` builds the example film end to end (2 to
+  4 min) in `~/explainer-videos/coche/invite-team/`. It is the test of the whole pipeline.
+- Inputs: docs URL, Markdown, README, ticket, description or a path through the app. Vague topic:
+  ask **what to show and to whom**, the rest follows from the code.
+- The project repository and, ideally, the app running on fictional data.
+- Folders: film in `$EXPLAINER_VIDEO_DIR/<project>/<slug>/` (default `~/explainer-videos/`,
+  **outside the repository**); shared brand in `.../<project>/brand.css`; intermediate frames in
+  `FRAMES_DIR` (temporary folder by default, about 200 MB per film).
 
 ## Workflow
 
-0. **Charte**, si `<projet>/charte.css` n'existe pas : `node $S/inventaire-charte.js <racine-du-dépôt>`,
-   lire les sources, mesurer sur l'app (`capturer.js`, clé `styles`), remplir depuis
-   `modele/charte.css` avec une source par valeur. Montrer un tableau variable / valeur / source.
-   Méthode : `references/charte.md` ; exemple rempli : `exemple/charte.css`.
-1. **Sujet** : en tirer **4 à 6 étapes au plus** et le moment « waouh » (l'app fait quelque chose
-   seule). Le reste reste dans la doc écrite.
-2. **Libellés** vérifiés dans le code puis vus sur l'app (navigateur de l'agent si une session est
-   nécessaire, sinon `capturer.js`). Relever les états intermédiaires (« Recherche en cours... »).
-3. **Liste d'états** montrée en tableau (état, ce que devient la forme, ce que le spectateur
-   comprend, instant). Enchaîner sans attendre, sauf si l'utilisateur veut valider.
-4. **Capture réelle** de la scène finale : `node $S/capturer.js recette.json` ; le JSON donne le
-   cadre exact des éléments, que le film lit tout seul. Recette et usage : `references/capture.md`.
-5. **Montage** : copier `modele/` dans le dossier du film, y mettre la charte du projet, ses polices
-   et logos dans `assets/`. `moteur.js` reste intact ; réécrire dans `film.html` `TXT`, `ST`, `GEO`,
-   `BG_KEYS`, décors, `CAPS`, `CUR` et caméra. Méthode : `references/mouvement.md` ; rôles des
-   couleurs, grille et composants : `references/direction-artistique.md`.
-6. **Autocritique obligatoire** : planches d'images clés et de transitions, note sur 10, trois pires
-   défauts corrigés, jusqu'à 8 partout, signature complète. Grille : `references/critique.md`.
-7. **Temps de lecture** : chaque texte reste affiché, entier et immobile, au moins **0,4 s + 0,3 s
-   par mot** ; sinon ajouter une pause dans `HOLDS`.
-8. **Rendu et vérification** : `video` en arrière-plan, puis `verifier`, qui sort en erreur au
-   moindre écart (taille, cadence, durée, couleurs, image vide). Regarder ensuite une image décodée
-   en pleine résolution.
-9. **Kit YouTube** si la vidéo y va : `miniature.html` → `render.js miniature`, `youtube-<lang>.json`
-   (avec `chaine` et `duree`), puis `kit.js`. Regarder la miniature à 168 x 94, ne livrer que tout
-   au vert. Règles : `references/youtube.md`.
-10. **Livrer** : le MP4 (et le kit), le chemin de `film.html` (`?t=14.9` l'ouvre figé), le
-    `LISEZ-MOI.md` du dossier rempli, et les écarts relevés entre la doc écrite et l'app.
+0. **Brand**, if `<project>/brand.css` does not exist: `node $S/brand-inventory.js <repo-root>`,
+   read the sources, measure on the app (`capture.js`, `styles` key), fill it in from
+   `template/brand.css` with one source per value. Show a variable / value / source table.
+   Method: `references/brand.md`; filled-in example: `example/brand.css`.
+1. **Topic**: draw **4 to 6 steps at most** from it, and the "wow" moment (the app does something
+   on its own). Everything else stays in the written docs.
+2. **Labels** checked in the code, then seen in the app (the agent's browser if a session is
+   needed, otherwise `capture.js`). Note the intermediate states ("Searching...").
+3. **List of states** shown as a table (state, what the shape becomes, what the viewer
+   understands, time). Carry on without waiting, unless the user wants to approve.
+4. **Real capture** of the final scene: `node $S/capture.js recipe.json`; the JSON gives the exact
+   frame of the elements, which the film reads on its own. Recipe and usage: `references/capture.md`.
+5. **Editing**: copy `template/` into the film folder, put the project brand, its fonts and logos
+   in `assets/`. `engine.js` stays untouched; rewrite in `film.html` `TXT`, `ST`, `GEO`, `BG_KEYS`,
+   sets, `CAPS`, `CUR` and camera. Method: `references/motion.md`; color roles, grid and
+   components: `references/art-direction.md`.
+6. **Mandatory self-review**: contact sheets of key frames and transitions, score out of 10, three
+   worst defects fixed, until 8 everywhere, full signature. Grid: `references/critique.md`.
+7. **Reading time**: every text stays on screen, whole and still, for at least **0.4 s + 0.3 s
+   per word**; otherwise add a pause in `HOLDS`.
+8. **Render and verification**: `video` in the background, then `verify`, which exits with an
+   error at the slightest gap (size, frame rate, duration, colors, empty frame). Then look at one
+   decoded frame at full resolution.
+9. **YouTube kit** if the video goes there: `thumbnail.html` → `render.js thumbnail`,
+   `youtube-<lang>.json` (with `channel` and `duration`), then `kit.js`. Look at the thumbnail at
+   168 x 94, deliver only when everything is green. Rules: `references/youtube.md`.
+10. **Deliver**: the MP4 (and the kit), the path of `film.html` (`?t=14.9` opens it frozen), the
+    filled-in `README.md` of the folder, and the gaps found between the written docs and the app.
 
 ```
-node $S/render.js <dossier-film> planche 1.9,7.4,13.9,22.5 fr
-node $S/render.js <dossier-film> video fr
-node $S/render.js <dossier-film> verifier fr
-node $S/render.js <dossier-film> affiche 22 fr
-node $S/render.js <dossier-film> miniature fr
-node $S/kit.js <dossier-film> fr
+node $S/render.js <film-folder> contact-sheet 1.9,7.4,13.9,22.5 en
+node $S/render.js <film-folder> video en
+node $S/render.js <film-folder> verify en
+node $S/render.js <film-folder> poster 22 en
+node $S/render.js <film-folder> thumbnail en
+node $S/kit.js <film-folder> en
 ```
 
-`render.js` refuse de rendre tant que `charte.css` est le gabarit, et signale tout fichier que le
-film demande sans le trouver.
+`render.js` refuses to render while `brand.css` is still the template, and reports every file
+the film requests without finding it.
 
-## Règles
+## Rules
 
-- **La charte vient du projet**, jamais du film de référence ni d'un goût personnel ; aucune couleur
-  de marque en dur dans le film, la miniature ou le kit.
-- **Captures sur données fictives uniquement**, jamais un compte réel ni une base de production.
-- **Ne jamais inventer un retour d'interface** (toast, « Copié ») ; une annotation reste permise si
-  elle se lit comme une annotation, hors de l'interface.
-- Argent, sécurité, délais, quotas : **prouvé dans le code ou pas écrit**. Chaque annotation doit
-  rester vraie dans tous les cas, pas seulement sur la démo ; sinon nommer l'objet sans
-  l'interpréter (« Votre lien »).
-- Scènes dessinées avec des données fictives génériques (« Équipe Produit », `example.com`) ; la
-  vraie capture n'est jamais retouchée. **Aucun visuel enfantin.**
-- Ne parler que du sujet : pas d'option avancée dans une prise en main.
-- Texte à l'écran : jamais de tiret cadratin ni demi-cadratin ; en français, espace insécable avant
-  les deux-points et les points d'interrogation, aucune en anglais.
-- **Ne rien installer** (ffmpeg, navigateur, paquets) sans l'accord de l'utilisateur : `outils.js`
-  dit quoi installer et comment.
-- Polices du projet : copiées pour le rendu, jamais publiées si la licence l'interdit.
-- Écrire les fichiers longs avec l'outil d'écriture, pas avec un heredoc.
+- **The brand comes from the project**, never from the reference film or personal taste; no brand
+  color hard-coded in the film, the thumbnail or the kit.
+- **Captures on fictional data only**, never a real account or a production database.
+- **Never invent interface feedback** (toast, "Copied"); an annotation is allowed if it reads as an
+  annotation, outside the interface.
+- Money, security, delays, quotas: **proven in the code or not written**. Every annotation must
+  stay true in every case, not only in the demo; otherwise name the object without interpreting it
+  ("Your link").
+- Scenes drawn with generic fictional data ("Product Team", `example.com`); the real capture is
+  never retouched. **No childish visuals.**
+- Talk only about the topic: no advanced option in a getting-started video.
+- On-screen text: never an em dash or en dash; in French, a non-breaking space before colons and
+  question marks, none in English.
+- **Install nothing** (ffmpeg, browser, packages) without the user's consent: `tools.js` says what
+  to install and how.
+- Project fonts: copied for rendering, never published if the license forbids it.
+- Write long files with the file-writing tool, not with a heredoc.
 
-## Retouches, autre langue, intégration
+## Edits, other language, embedding
 
-- **Retouche** : planche autour de l'instant touché (avant, pendant, après), puis rendu complet.
-  Allonger une scène sans tout décaler : `warp()` (`references/mouvement.md`).
-- **Nouvelle charte** : mettre à jour `charte.css`, refaire une planche, relancer le rendu.
-- **Autre langue** : `TXT.<lang>` avec les traductions du projet, capture dans cette langue
-  (`"lang"` de la recette, sortie `ecran-reel-<lang>.png`), rendu avec `<lang>`, vérifier les
-  largeurs. Le modèle a `fr` et `en` : `node $S/exemple.js <dossier> en`.
-- **Intégration** : téléverser le MP4 et l'affiche, puis
-  `<video src="URL_MP4" poster="URL_AFFICHE" controls muted playsinline preload="metadata" style="width:100%;height:auto;display:block;border-radius:14px;"></video>`.
-  GitHub : 10 Mo au plus sur un compte gratuit (raccourcir, ou rendre en 30 i/s).
+- **Edit**: contact sheet around the touched instant (before, during, after), then full render.
+  Lengthen a scene without shifting everything: `warp()` (`references/motion.md`).
+- **New brand**: update `brand.css`, make a contact sheet again, render again.
+- **Other language**: `TXT.<lang>` with the project's translations, capture in that language
+  (`"lang"` of the recipe, output `real-screen-<lang>.png`), render with `<lang>`, check the
+  widths. The template has `en` and `fr`: `node $S/example.js <folder> fr`.
+- **Embedding**: upload the MP4 and the poster, then
+  `<video src="MP4_URL" poster="POSTER_URL" controls muted playsinline preload="metadata" style="width:100%;height:auto;display:block;border-radius:14px;"></video>`.
+  GitHub: 10 MB at most on a free account (shorten, or render at 30 fps).
 
-## Références (à lire seulement si l'étape l'exige)
+## References (read only when the step requires it)
 
-- `references/outils.md` : prérequis, recherche du navigateur, variables, scripts, contrôles de `verifier`, temps mesurés (avant de commencer, en cas de panne d'outil).
-- `references/charte.md` : relever la charte, table des sources par design system, polices, logos (étape 0).
-- `references/capture.md` : recette de `capturer.js`, session, du JSON au cadre du film (étapes 0, 4).
-- `references/mouvement.md` : moteur, forme unique, rythme, pauses, `warp()`, caméra, curseur (étapes 5, 7).
-- `references/direction-artistique.md` : rôles des couleurs, typographie, grille, composants du modèle (étape 5).
-- `references/critique.md` : signature à vérifier, grille de notation, défauts connus, lecture de `verifier` (étapes 6, 8).
-- `references/youtube.md` : miniature, titre, description, tags, contrôles du kit (étape 9).
-- `references/pieges.md` : pannes techniques du rendu et de l'encodage (quand un rendu sort faux).
-- `modele/` : film, moteur, charte gabarit, miniature, JSON YouTube (`fr`, `en`), Inter (OFL) et `LISEZ-MOI.md` à copier.
-- `exemple/` : charte remplie et maquette HTML de l'app fictive, capturée par `exemple.js`.
+- `references/tools.md`: prerequisites, browser lookup, variables, scripts, `verify` checks, measured times (before starting, when a tool breaks).
+- `references/brand.md`: extracting the brand, source table per design system, fonts, logos (step 0).
+- `references/capture.md`: `capture.js` recipe, session, from the JSON to the film frame (steps 0, 4).
+- `references/motion.md`: engine, single shape, rhythm, pauses, `warp()`, camera, cursor (steps 5, 7).
+- `references/art-direction.md`: color roles, typography, grid, template components (step 5).
+- `references/critique.md`: signature to check, scoring grid, known defects, reading `verify` (steps 6, 8).
+- `references/youtube.md`: thumbnail, title, description, tags, kit checks (step 9).
+- `references/pitfalls.md`: technical failures of rendering and encoding (when a render comes out wrong).
+- `template/`: film, engine, brand template, thumbnail, YouTube JSON (`en`, `fr`), Inter (OFL) and `README.md` to copy.
+- `example/`: filled-in brand and HTML mockup of the fictional app, captured by `example.js`.

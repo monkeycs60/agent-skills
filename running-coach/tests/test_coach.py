@@ -63,7 +63,7 @@ class StravaRouter:
             return Response((api / "streams_9000000001.json").read_bytes())
         if url.endswith("/laps"):
             return Response((api / "laps_9000000001.json").read_bytes())
-        raise AssertionError(f"URL inattendue : {url}")
+        raise AssertionError(f"unexpected URL: {url}")
 
 
 class FakeGarmin:
@@ -126,31 +126,31 @@ class CoachTestCase(unittest.TestCase):
 class ImportTests(CoachTestCase):
     def test_import_all_formats(self):
         out = self.import_files()
-        self.assertIn("29 nouvelle(s)", out)
-        self.assertIn("1 déjà présente(s)", out)
+        self.assertIn("29 new", out)
+        self.assertIn("1 already present", out)
         rows = self.rows()
-        self.assertEqual(rows["2026-10-06:run"]["structure"], "Fractionné 6×800 m")
-        self.assertEqual(rows["2026-10-08:run"]["structure"], "Footing")
+        self.assertEqual(rows["2026-10-06:run"]["structure"], "Intervals 6×800 m")
+        self.assertEqual(rows["2026-10-08:run"]["structure"], "Easy run")
         self.assertAlmostEqual(rows["2026-10-08:run"]["distance_km"], 8.0, delta=0.1)
-        self.assertEqual(rows["2026-10-10:run"]["structure"], "Tempo/seuil")
+        self.assertEqual(rows["2026-10-10:run"]["structure"], "Tempo/threshold")
         self.assertEqual(rows["2026-10-10:run"]["quality_km"], 5)
-        self.assertEqual(rows["2026-10-11:run"]["structure"], "Sortie longue")
+        self.assertEqual(rows["2026-10-11:run"]["structure"], "Long run")
         self.assertIsNotNone(rows["2026-10-11:run"]["decoupling"])
         self.assertEqual(rows["2026-09-02:ride"]["sport"], "ride")
-        self.assertEqual(rows["2026-09-01:run"]["structure"], "Séance soutenue")
+        self.assertEqual(rows["2026-09-01:run"]["structure"], "Hard session")
         self.assertEqual(rows["2026-10-08:run"]["source"], "file")
 
     def test_reimport_is_idempotent(self):
         self.import_files()
         out = self.import_files()
-        self.assertIn("0 nouvelle(s)", out)
+        self.assertIn("0 new", out)
         self.assertEqual(len(store.load_index()), 29)
 
     def test_richer_file_replaces_summary(self):
         run("import", str(FIX / "files" / "garmin_summarizedActivities.json"))
         code, out, _ = run("import", str(FIX / "files" / "2026-10-08_easy.gpx"))
         self.assertEqual(code, 0)
-        self.assertIn("1 remplaçant", out)
+        self.assertIn("1 replacing", out)
         self.assertEqual(self.rows()["2026-10-08:run"]["detail"], 2)
 
     def test_zip_and_unknown_files(self):
@@ -162,11 +162,11 @@ class ImportTests(CoachTestCase):
         with zipfile.ZipFile(archive, "w") as zf:
             zf.writestr("DI_CONNECT/DI-Connect-Uploaded-Files/UploadedFiles_0-_Part1.zip", inner.getvalue())
             zf.write(FIX / "files" / "garmin_summarizedActivities.json", "DI_CONNECT/DI-Connect-Fitness/x_0_summarizedActivities.json")
-            zf.writestr("activities/notes.txt", "rien")
+            zf.writestr("activities/notes.txt", "nothing")
             zf.writestr("DI_CONNECT/DI-Connect-Wellness/sleepData.json", "[]")
         code, out, _ = run("import", str(archive))
         self.assertEqual(code, 0, out)
-        self.assertIn("27 nouvelle(s)", out)
+        self.assertIn("27 new", out)
         self.assertEqual(self.rows()["2026-10-10:run"]["detail"], 2)
 
     def test_bad_file_is_reported_not_fatal(self):
@@ -174,8 +174,8 @@ class ImportTests(CoachTestCase):
         bad.write_text("<gpx><trk>")
         code, out, _ = run("import", str(bad), str(FIX / "files" / "2026-10-08_easy.gpx"))
         self.assertEqual(code, 0)
-        self.assertIn("ignoré", out)
-        self.assertIn("1 nouvelle(s)", out)
+        self.assertIn("skipped", out)
+        self.assertIn("1 new", out)
 
 
 class MetricsTests(CoachTestCase):
@@ -212,9 +212,9 @@ class ReportTests(CoachTestCase):
         self.import_files()
         code, out, _ = run("--today", "2026-10-11", "week")
         self.assertEqual(code, 0)
-        self.assertIn("4 sortie(s), 43.2 km", out)
+        self.assertIn("4 run(s), 43.2 km", out)
         code, out, _ = run("--today", "2026-10-11", "analyze", "last")
-        self.assertIn("Fin de sortie au-dessus de Z2", out)
+        self.assertIn("End of run above Z2", out)
         code, out, _ = run("--today", "2026-10-11", "status")
         self.assertIn("TSB", out)
         code, out, _ = run("--today", "2026-10-11", "recap")
@@ -224,9 +224,9 @@ class ReportTests(CoachTestCase):
     def test_next_rules(self):
         self.import_files()
         _, out, _ = run("--today", "2026-10-12", "next")
-        self.assertIn("Footing de récupération", out)
+        self.assertIn("Recovery run", out)
         _, out, _ = run("--today", "2026-10-09", "next")
-        self.assertIn("Proposition : Footing", out)
+        self.assertIn("Proposal: Easy run", out)
         code, out, _ = run("--today", "2026-10-12", "next", "--spec")
         self.assertEqual(code, 0)
         workout.validate(json.loads(out))
@@ -235,12 +235,12 @@ class ReportTests(CoachTestCase):
         self.import_files()
         shutil.copy(FIX / "plan.json", self.tmp / "config" / "plan.json")
         _, out, _ = run("--today", "2026-10-10", "next")
-        self.assertIn("Plan — Sortie longue 16 km", out)
+        self.assertIn("Plan — Long run 16 km", out)
         _, out, _ = run("--today", "2026-10-13", "next")
-        self.assertIn("Plan — Seuil 3 × 10 min", out)
+        self.assertIn("Plan — Threshold 3 × 10 min", out)
         code, out, _ = run("--today", "2026-10-14", "plan")
         self.assertEqual(code, 0)
-        self.assertIn("❌ manqué", out)
+        self.assertIn("❌ missed", out)
 
     def test_export(self):
         self.import_files()
@@ -257,28 +257,28 @@ class StravaTests(CoachTestCase):
         with mock.patch("urllib.request.urlopen", router):
             code, out, err = run("--today", "2026-10-15", "sync", "--days", "7")
         self.assertEqual(code, 0, out + err)
-        self.assertIn("2 listées, 2 nouvelles", out)
+        self.assertIn("2 listed, 2 new", out)
         self.assertTrue(router.calls[0].startswith(strava.TOKEN_URL))
         creds = json.loads(strava.creds_path().read_text())
         self.assertEqual(creds["access_token"], "fake-access-token-2")
         self.assertEqual(oct(strava.creds_path().stat().st_mode & 0o777), "0o600")
         act = store.get("strava-9000000001")
         self.assertEqual(act["detail"], 2)
-        self.assertEqual(self.rows()["2026-10-13:run"]["structure"], "Footing")
+        self.assertEqual(self.rows()["2026-10-13:run"]["structure"], "Easy run")
 
     def test_rate_limit_keeps_summary(self):
         self.connect_strava(expired=False)
         with mock.patch("urllib.request.urlopen", StravaRouter(fail_streams=429)):
             code, out, _ = run("sync", "--days", "7")
         self.assertEqual(code, 0)
-        self.assertIn("limite de requêtes Strava", out)
+        self.assertIn("Strava rate limit", out)
         self.assertEqual(store.get("strava-9000000001")["detail"], 0)
 
     def test_auth_registration(self):
         with mock.patch("sys.stdin", io.StringIO("")):
             code, _, err = run("auth", "strava", "--client-id", "42")
         self.assertEqual(code, 1)
-        self.assertIn("dans un terminal", err)
+        self.assertIn("in a terminal", err)
         code, out, _ = run("auth", "strava", "--client-id", "42", "--client-secret", "s3cr3t")
         self.assertEqual(code, 0)
         self.assertIn("client_id=42", out)
@@ -314,11 +314,11 @@ class GarminTests(CoachTestCase):
              mock.patch("time.sleep"), mock.patch.object(garmin, "client", return_value=fake):
             code, out, err = run("--today", "2026-10-16", "sync")
         self.assertEqual(code, 0, out + err)
-        self.assertIn("bascule sur garmin", out)
-        self.assertIn("Garmin : 2 listées, 2 nouvelles", out)
+        self.assertIn("falling back to garmin", out)
+        self.assertIn("Garmin: 2 listed, 2 new", out)
         self.assertEqual(sorted(fake.downloads), ["30000000001", "30000000002"])
         self.assertEqual(store.get("garmin-30000000002")["detail"], 2)
-        self.assertEqual(self.rows()["2026-10-15:run"]["structure"], "Tempo/seuil")
+        self.assertEqual(self.rows()["2026-10-15:run"]["structure"], "Tempo/threshold")
 
     def test_all_sources_deduplicate(self):
         self.connect_strava(expired=False)
@@ -327,7 +327,7 @@ class GarminTests(CoachTestCase):
              mock.patch.object(garmin, "client", return_value=FakeGarmin()):
             code, out, _ = run("--today", "2026-10-16", "sync", "--source", "all")
         self.assertEqual(code, 0, out)
-        self.assertIn("1 déjà présentes via une autre source", out)
+        self.assertIn("1 already present from another source", out)
         self.assertEqual(len([r for r in metrics.read_csv("activities.csv") if r["date"] == "2026-10-13"]), 1)
 
     def test_not_connected(self):
@@ -356,7 +356,7 @@ class GarminTests(CoachTestCase):
         bad.write_text(json.dumps({"name": "x", "steps": [{"kind": "interval", "dur": "5:00", "dist": 1000}]}))
         code, _, err = run("workout", "push", str(bad), "--dry-run")
         self.assertEqual(code, 1)
-        self.assertIn("exactement une fin", err)
+        self.assertIn("exactly one end", err)
 
 
 class CliTests(CoachTestCase):
@@ -377,14 +377,14 @@ class CliTests(CoachTestCase):
             self.assertNotIn("Traceback", out + err, cmd)
         code, _, err = run("analyze")
         self.assertEqual(code, 1)
-        self.assertIn("aucune activité", err)
+        self.assertIn("no activities", err)
 
     def test_profile_set_auto_hr_max(self):
         os.remove(self.tmp / "config" / "profile.json")
         self.import_files()
         code, out, err = run("profile", "set", "--hr-max", "auto", "--goal-distance", "10", "--goal-date", "2027-05-01")
         self.assertEqual(code, 0, err)
-        self.assertIn("FC max : 176 bpm (profil)", out)
+        self.assertIn("Max HR: 176 bpm (profile)", out)
 
 
 if __name__ == "__main__":

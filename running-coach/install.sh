@@ -4,17 +4,17 @@ set -uo pipefail
 case "${1:-}" in
   -h|--help)
     cat <<'EOF'
-usage : install.sh [--upgrade]
+usage: install.sh [--upgrade]
 
-Installe le skill running-coach : lien dans ~/.claude/skills (et Codex), environnement
-Python dans <skill>/.venv (fitdecode, garminconnect), dossiers de configuration et de
-données, puis essai complet hors ligne sur les données de test. Relançable sans risque.
+Installs the running-coach skill: link in ~/.claude/skills (and Codex), Python
+environment in <skill>/.venv (fitdecode, garminconnect), config and data folders,
+then a full offline trial on the test data. Safe to run again.
 
-  --upgrade   met à jour les dépendances (utile quand la connexion Garmin casse)
+  --upgrade   upgrades the dependencies (useful when the Garmin login breaks)
 EOF
     exit 0 ;;
   ""|--upgrade) ;;
-  *) echo "option inconnue : $1 (voir --help)" >&2; exit 2 ;;
+  *) echo "unknown option: $1 (see --help)" >&2; exit 2 ;;
 esac
 upgrade="${1:-}"
 
@@ -37,15 +37,15 @@ find_python() {
   return 1
 }
 
-echo "Skill running-coach : $skill"
+echo "running-coach skill: $skill"
 
-echo "1. Emplacement"
+echo "1. Location"
 for dir in "$HOME/.claude/skills" "$HOME/.codex/skills" "$HOME/.agents/skills"; do
   [ "$dir" = "$HOME/.claude/skills" ] && mkdir -p "$dir"
   [ -d "$dir" ] || continue
   target="$dir/running-coach"
   if [ "$(cd "$target" 2>/dev/null && pwd -P)" = "$skill" ]; then ok "$target"
-  elif [ -e "$target" ] || [ -L "$target" ]; then warn "$target existe déjà et pointe ailleurs : laissé tel quel"
+  elif [ -e "$target" ] || [ -L "$target" ]; then warn "$target already exists and points elsewhere: left as is"
   else ln -s "$skill" "$target" && ok "$target → $skill"
   fi
 done
@@ -53,21 +53,21 @@ chmod +x "$skill/scripts/coach" "$skill/install.sh" "$skill/tests/e2e.sh"
 
 echo "2. Python"
 if [ -x "$venv/bin/python" ] && at_least "$venv/bin/python" 3 10; then
-  ok "environnement existant : Python $(pyver "$venv/bin/python")"
+  ok "existing environment: Python $(pyver "$venv/bin/python")"
 else
   rm -rf "$venv"
   if has uv && uv venv -q --python 3.12 "$venv" >/dev/null 2>&1; then
-    ok "Python $(pyver "$venv/bin/python") installé par uv dans .venv"
+    ok "Python $(pyver "$venv/bin/python") installed by uv in .venv"
   elif py="$(find_python 10)"; then
     if "$py" -m venv "$venv" >/dev/null 2>&1; then ok "Python $(pyver "$py") ($py) → .venv"
-    else bad "$py -m venv a échoué (Debian/Ubuntu : sudo apt install python3-venv)"
+    else bad "$py -m venv failed (Debian/Ubuntu: sudo apt install python3-venv)"
     fi
   else
-    bad "Python 3.10 ou plus récent introuvable : installer uv (https://docs.astral.sh/uv/) ou Python 3.12 (macOS : brew install python)"
+    bad "Python 3.10 or newer not found: install uv (https://docs.astral.sh/uv/) or Python 3.12 (macOS: brew install python)"
   fi
 fi
 
-echo "3. Dépendances"
+echo "3. Dependencies"
 if [ -x "$venv/bin/python" ]; then
   pip_install() {
     if has uv; then uv pip install -q --python "$venv/bin/python" ${upgrade:+--upgrade} "$@"
@@ -76,23 +76,23 @@ if [ -x "$venv/bin/python" ]; then
   }
   started=$(date +%s)
   if pip_install -r "$skill/requirements.txt" >"$venv/install.log" 2>&1; then
-    ok "fitdecode et garminconnect installés en $(( $(date +%s) - started )) s"
+    ok "fitdecode and garminconnect installed in $(( $(date +%s) - started )) s"
   elif pip_install "$(grep -E '^fitdecode' "$skill/requirements.txt")" >>"$venv/install.log" 2>&1; then
-    warn "garminconnect impossible à installer (voir $venv/install.log) : Garmin indisponible, Strava et l'import restent utilisables"
+    warn "garminconnect could not be installed (see $venv/install.log): Garmin unavailable, Strava and import still work"
   else
-    bad "installation impossible, détail dans $venv/install.log"
+    bad "installation failed, details in $venv/install.log"
   fi
   if ! at_least "$venv/bin/python" 3 12; then
-    warn "Python $(pyver "$venv/bin/python") : garminconnect est limité à la version 0.3.2. La connexion Garmin suit mieux les changements de Garmin avec Python 3.12 ou plus (installer uv, supprimer .venv, relancer)."
+    warn "Python $(pyver "$venv/bin/python"): garminconnect is capped at version 0.3.2. The Garmin login keeps up better with Garmin changes on Python 3.12 or newer (install uv, delete .venv, run again)."
   fi
 fi
 
-echo "4. Dossiers"
+echo "4. Folders"
 config="${RUNNING_COACH_CONFIG:-${XDG_CONFIG_HOME:-$HOME/.config}/running-coach}"
 data="${RUNNING_COACH_DATA:-${XDG_DATA_HOME:-$HOME/.local/share}/running-coach}"
-mkdir -p "$config" "$data" && chmod 700 "$config" && ok "configuration $config" && ok "données $data"
+mkdir -p "$config" "$data" && chmod 700 "$config" && ok "configuration $config" && ok "data $data"
 
-echo "5. Essai hors ligne"
+echo "5. Offline trial"
 if [ "$missing" = 0 ]; then
   trial="$(mktemp -d)"
   mkdir -p "$trial/config"
@@ -100,18 +100,18 @@ if [ "$missing" = 0 ]; then
   started=$(date +%s)
   if out="$(RUNNING_COACH_CONFIG="$trial/config" RUNNING_COACH_DATA="$trial/data" "$skill/scripts/coach" import "$skill/tests/fixtures/files" 2>&1 \
         && RUNNING_COACH_CONFIG="$trial/config" RUNNING_COACH_DATA="$trial/data" "$skill/scripts/coach" --today 2026-10-11 week 2>&1)" \
-     && printf '%s' "$out" | grep -q "4 sortie(s), 43.2 km"; then
-    ok "import GPX/TCX/FIT/JSON et bilan de semaine en $(( $(date +%s) - started )) s"
+     && printf '%s' "$out" | grep -q "4 run(s), 43.2 km"; then
+    ok "GPX/TCX/FIT/JSON import and weekly report in $(( $(date +%s) - started )) s"
   else
-    bad "échec de l'essai : $(printf '%s' "$out" | tail -3)"
+    bad "trial failed: $(printf '%s' "$out" | tail -3)"
   fi
   rm -rf "$trial"
 fi
 
 echo
 if [ "$missing" = 0 ]; then
-  echo "Prêt. Commandes : $skill/scripts/coach --help ; premier pas : $skill/scripts/coach doctor"
+  echo "Ready. Commands: $skill/scripts/coach --help; first step: $skill/scripts/coach doctor"
 else
-  echo "Installation incomplète : corriger les lignes marquées ✗ puis relancer install.sh"
+  echo "Incomplete installation: fix the lines marked ✗, then run install.sh again"
   exit 1
 fi

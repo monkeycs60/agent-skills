@@ -1,8 +1,8 @@
 {
-  "chaine": "Coche",
+  "channel": "Coche",
   "film": "Invite your team",
-  "duree": 36.7,
-  "titre": "Share a task list with your team on Coche",
+  "duration": 36.7,
+  "title": "Share a task list with your team on Coche",
   "description": "Share a task list with your team on Coche (invite link): join the space, paste the list address, then send the link.\n\nChapters\n00:00 Join a space and open \"Invite\"\n00:12 Paste the list address and copy the link\n00:24 Send the link to your team\n\nSummary\n1. In Spaces, ask to join your team's space. Once your request is accepted, you are a \"Member\".\n2. In the menu, under Tools, open \"Invite\".\n3. Paste the list address. The space is recognized automatically.\n4. Your invite link shows up right away, no button to click. Copy it in one click.\n5. Send it to your team: one click is all it takes to join the list.\n\nFull docs:\nhttps://coche.example/doc/invite\n\n#Coche #productivity #tutorial",
   "tags": [
     "share a task list",
@@ -16,11 +16,11 @@
     "task app",
     "productivity"
   ],
-  "reglages": {
-    "Langue de la vidéo": "Anglais",
-    "Catégorie": "Éducation",
-    "Public": "Non, elle n'est pas conçue pour les enfants",
-    "Chapitres automatiques": "Désactivés : les chapitres de la description suffisent",
-    "Écran de fin": "Facultatif. S'il est ajouté, 5 s au plus, pour ne pas masquer le vrai écran"
+  "settings": {
+    "Video language": "English",
+    "Category": "Education",
+    "Audience": "No, it's not made for kids",
+    "Automatic chapters": "Off: the chapters in the description are enough",
+    "End screen": "Optional. If added, 5 s at most, so it does not hide the real screen"
   }
 }

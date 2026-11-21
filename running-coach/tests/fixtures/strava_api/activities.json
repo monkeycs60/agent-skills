@@ -1,7 +1,7 @@
 [
  {
   "id": 9000000001,
-  "name": "Footing matinal",
+  "name": "Morning easy run",
   "type": "Run",
   "sport_type": "Run",
   "start_date": "2026-10-13T05:05:00Z",
@@ -16,7 +16,7 @@
  },
  {
   "id": 9000000002,
-  "name": "V\u00e9lo du soir",
+  "name": "Evening ride",
   "type": "Ride",
   "sport_type": "Ride",
   "start_date": "2026-10-14T16:30:00Z",
